@@ -27,8 +27,6 @@ PCMWaveform_widget::PCMWaveform_widget(QWidget *parent) :
     m_chart->setBackgroundVisible(false);
     m_chart->axisX()->hide();
     m_chart->axisY()->hide();
-//    m_chart->axisX()->gridVisibleChanged(false);
-//    m_chart->axisY()->gridVisibleChanged(false);
 
     m_chartView = new QChartView(m_chart);
     m_chartView->setRenderHint(QPainter::Antialiasing);

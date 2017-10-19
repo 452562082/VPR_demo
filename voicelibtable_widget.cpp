@@ -13,7 +13,7 @@ VoiceLibTable_widget::VoiceLibTable_widget(QWidget *parent) :
 {
     ui->setupUi(this);
     this->setFixedSize(1120,634);
-    this->setStyleSheet("* {background-color: transparent;}");
+    this->setStyleSheet("* {background-color: transparent;border:0px;}");
     m_current_row = 0;
     m_current_column = 0;
     m_centerWidget = new QWidget(this);
