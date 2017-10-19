@@ -7,7 +7,7 @@
 #include <QDate>
 
 struct RegistrantInfo{
-    RegistrantInfo(){}
+    RegistrantInfo():spk_id(""),name(""),head_path(""),registration_time(QDateTime::currentDateTime()){}
     RegistrantInfo(const RegistrantInfo& info):
         spk_id(info.spk_id),
         name(info.name),

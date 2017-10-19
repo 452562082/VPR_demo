@@ -152,10 +152,12 @@ void VoiceIdentification_win::record_timeout(QByteArray buf,int len)
     _Rpc_TopSpeakerInfo* ret = new _Rpc_TopSpeakerInfo();
     rpc_tool->KvpIdentifyTopSpeakerByStream(ret, (short*)buf.data(), len, &vp_node,1,1, 1, 0);
     m_error_code = ret->ErrCode;
-    if(ret->ErrCode == 0){
+    if(ret->ErrCode == 0 && ret->Top != 0){
         SoundsData_db *db = SoundsData_db::GetInstance();
         RegistrantInfo registrant_info;
-        db->GetRegistrantInfoBySpkId(ret->Scores->Spkid, registrant_info);
+        if(ret->Scores != nullptr){
+            db->GetRegistrantInfoBySpkId(ret->Scores->Spkid, registrant_info);
+        }
         m_registrantHeadLab->show();
         m_registrantHeadLab->setPixmap(QPixmap(registrant_info.head_path));
         m_identifyInfoLab->setText(registrant_info.name);
