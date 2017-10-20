@@ -68,6 +68,7 @@ RegistrantItem_widget::~RegistrantItem_widget()
 
 void RegistrantItem_widget::paintEvent(QPaintEvent *e)
 {
+    Q_UNUSED(e)
     QPainter painter(this);
     //背景绘制
     painter.drawPixmap(0,0,width(),height(),QPixmap("://images/item_bg.png"));

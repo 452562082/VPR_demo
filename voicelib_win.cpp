@@ -64,6 +64,7 @@ VoiceLib_win::~VoiceLib_win()
 
 void VoiceLib_win::paintEvent(QPaintEvent *e)
 {
+    Q_UNUSED(e)
     QPainter painter(this);
     //背景绘制
     painter.drawPixmap(0,0,width(),height(),QPixmap("://images/bg.png"));

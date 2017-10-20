@@ -12,6 +12,7 @@
 #include <QMessageBox>
 #include <QCryptographicHash>
 #include "masklabel.h"
+#include <memory>
 
 namespace{
     const char* vp_node = "Test_RPC";
@@ -131,6 +132,7 @@ VoiceRegistration_win::~VoiceRegistration_win()
 
 void VoiceRegistration_win::paintEvent(QPaintEvent *e)
 {
+    Q_UNUSED(e)
     QPainter painter(this);
     //背景绘制
     painter.drawPixmap(0,0,width(),height(),QPixmap("://images/bg.png"));
@@ -175,8 +177,11 @@ void VoiceRegistration_win::record_timeout(QByteArray buf,int len)
     md5.addData(buf);
     QString spk_id = md5.result().toHex();
     RPC_Kvp_Tool *rpc_tool = RPC_Kvp_Tool::GetInstance();
-    _Rpc_ModelInfo* ret = new _Rpc_ModelInfo();
+    _Rpc_ModelInfo *ret = nullptr;
     rpc_tool->KvpRegisterSpeakerByStream(ret, (short*)buf.data(), len , vp_node, "/tmp/asv/", spk_id.toStdString().c_str());
+    if(ret == nullptr){
+        return;
+    }
     if(ret->ErrCode == 0){
         SoundsData_db *db = SoundsData_db::GetInstance();
         db->AddRegistrantInfo(spk_id,m_buf_name,m_buf_head_path);
@@ -184,6 +189,7 @@ void VoiceRegistration_win::record_timeout(QByteArray buf,int len)
     }else{
         QMessageBox::warning(this,tr("错误"),QString("注册失败,错误码为%1,错误信息:%2").arg(QString::number(ret->ErrCode, 10)).arg(ret->ErrMsg),QMessageBox::Yes);
     }
+    rpc_tool->Delete_Rpc_ModelInfo(ret);
 }
 
 void VoiceRegistration_win::returnBtn_clicked()

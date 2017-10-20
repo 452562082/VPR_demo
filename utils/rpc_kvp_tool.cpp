@@ -8,8 +8,7 @@ namespace {
     const int kvp_port = 9191;
 }
 RPC_Kvp_Tool* RPC_Kvp_Tool::m_instance = nullptr;
-RPC_Kvp_Tool::RPC_Kvp_Tool():m_transport_ptr(nullptr),
-  m_kvp_client_ptr(nullptr),
+RPC_Kvp_Tool::RPC_Kvp_Tool():
   m_is_open(false)
 {
     m_rpc_dllHandle = nullptr;
@@ -24,8 +23,6 @@ RPC_Kvp_Tool::~RPC_Kvp_Tool()
     if(m_is_open){
         KvpServiceClient_close();
     }
-    deleteTransport();
-    deleteKvpServiceClient();
     if(m_rpc_dllHandle != nullptr) {
         FreeLibrary(m_rpc_dllHandle);
         m_rpc_dllHandle = nullptr;
@@ -46,25 +43,48 @@ RPC_Kvp_Tool* RPC_Kvp_Tool::GetInstance()
 
 bool RPC_Kvp_Tool::KvpServiceClient_Open(const char* ip,int port)
 {
-    if(!createTransport(ip, port)) {
-        qDebug() << "Error: createTransport failed";
+    try{
+        if(m_rpc_dllHandle == nullptr) {
+            return false;
+        }
+
+        typedef void* (*KvpServiceClient_Open)(const char* ip,int port);
+        KvpServiceClient_Open KvpServiceClient_OpenFunc = (KvpServiceClient_Open)GetProcAddress(m_rpc_dllHandle, "KvpServiceClient_Open");
+        if(!KvpServiceClient_OpenFunc){
+            qDebug() << "Error: KvpServiceClient_Open 函数获取失败";
+            return false;
+        }
+        KvpServiceClient_OpenFunc(ip, port);
+        m_is_open = true;
+        return true;
+    }catch(std::exception ex)
+    {
+        qDebug() << "Error:" << ex.what();
         return false;
     }
-
-    if(!createKvpServiceClient()){
-        qDebug() << "Error: createKvpServiceClient failed";
-        return false;
-    }
-
-    transportOpen();
-    m_is_open = true;
-    return true;
 }
 
-void RPC_Kvp_Tool::KvpServiceClient_close()
+bool RPC_Kvp_Tool::KvpServiceClient_close()
 {
-    transportClose();
-    m_is_open = false;
+    try{
+        if(m_rpc_dllHandle == nullptr) {
+            return false;
+        }
+
+        typedef void* (*KvpServiceClient_close)();
+        KvpServiceClient_close KvpServiceClient_closeFunc = (KvpServiceClient_close)GetProcAddress(m_rpc_dllHandle, "KvpServiceClient_close");
+        if(!KvpServiceClient_closeFunc){
+            qDebug() << "Error: KvpServiceClient_close 函数获取失败";
+            return false;
+        }
+        KvpServiceClient_closeFunc();
+        m_is_open = false;
+        return true;
+    }catch(std::exception ex)
+    {
+        qDebug() << "Error:" << ex.what();
+        return false;
+    }
 }
 
 bool RPC_Kvp_Tool::KvpInsertNode(int32_t &ret, const char* node_name)
@@ -79,13 +99,13 @@ bool RPC_Kvp_Tool::KvpInsertNode(int32_t &ret, const char* node_name)
                 return false;
         }
 
-        typedef int32_t (*KvpInsertNode)(void* client_ptr, const char* node_name);
+        typedef int32_t (*KvpInsertNode)(const char* node_name);
         KvpInsertNode KvpInsertNodeFunc = (KvpInsertNode)GetProcAddress(m_rpc_dllHandle, "KvpInsertNode");
         if(!KvpInsertNodeFunc){
             qDebug() << "Error: KvpInsertNode 函数获取失败";
             return false;
         }
-        ret = KvpInsertNodeFunc(m_kvp_client_ptr,node_name);
+        ret = KvpInsertNodeFunc(node_name);
     }catch(std::exception ex)
     {
         qDebug() << "Error:" << ex.what();
@@ -105,13 +125,13 @@ bool RPC_Kvp_Tool::KvpDeleteNode(int32_t &ret, const char* node_name)
                 return false;
         }
 
-        typedef int32_t (*KvpDeleteNode)(void* client_ptr, const char* node_name);
+        typedef int32_t (*KvpDeleteNode)(const char* node_name);
         KvpDeleteNode KvpDeleteNodeFunc = (KvpDeleteNode)GetProcAddress(m_rpc_dllHandle, "KvpDeleteNode");
         if(!KvpDeleteNodeFunc){
             qDebug() << "Error: KvpDeleteNode 函数获取失败";
             return false;
         }
-        ret = KvpDeleteNodeFunc(m_kvp_client_ptr,node_name);
+        ret = KvpDeleteNodeFunc(node_name);
     }catch(std::exception ex)
     {
         qDebug() << "Error:" << ex.what();
@@ -131,21 +151,21 @@ bool RPC_Kvp_Tool::KvpModelRemoveBySpkid(int32_t &ret, const char* vp_node, cons
                 return false;
         }
 
-        typedef int32_t (*KvpModelRemoveBySpkid)(void* client_ptr, const char* vp_node, const char* vp_dir, const char* spk_id);
+        typedef int32_t (*KvpModelRemoveBySpkid)(const char* vp_node, const char* vp_dir, const char* spk_id);
         KvpModelRemoveBySpkid KvpModelRemoveBySpkidFunc = (KvpModelRemoveBySpkid)GetProcAddress(m_rpc_dllHandle, "KvpModelRemoveBySpkid");
         if(!KvpModelRemoveBySpkidFunc){
             qDebug() << "Error: KvpModelRemoveBySpkid 函数获取失败";
             return false;
         }
-        ret = KvpModelRemoveBySpkidFunc(m_kvp_client_ptr,vp_node,vp_dir,spk_id);
-        return true;
+        ret = KvpModelRemoveBySpkidFunc(vp_node,vp_dir,spk_id);
     }catch(std::exception ex)
     {
         qDebug() << "Error:" << ex.what();
     }
+    return true;
 }
 
-bool RPC_Kvp_Tool::KvpRegisterSpeakerByStream(_Rpc_ModelInfo* ret, int16_t* utt, int utt_size, const char* vp_node, const char* vp_dir, const char* spk_id)
+bool RPC_Kvp_Tool::KvpRegisterSpeakerByStream(_Rpc_ModelInfo* &ret, int16_t* utt, int utt_size, const char* vp_node, const char* vp_dir, const char* spk_id)
 {
     try{
         if(m_rpc_dllHandle == nullptr) {
@@ -157,13 +177,13 @@ bool RPC_Kvp_Tool::KvpRegisterSpeakerByStream(_Rpc_ModelInfo* ret, int16_t* utt,
                 return false;
         }
 
-        typedef void (*KvpRegisterSpeakerByStream)(void* client_ptr, _Rpc_ModelInfo* ret, int16_t* utt, int utt_size, const char* vp_node, const char* vp_dir, const char* spk_id);
+        typedef _Rpc_ModelInfo* (*KvpRegisterSpeakerByStream)(int16_t* utt, int utt_size, const char* vp_node, const char* vp_dir, const char* spk_id);
         KvpRegisterSpeakerByStream KvpRegisterSpeakerByStreamFunc = (KvpRegisterSpeakerByStream)GetProcAddress(m_rpc_dllHandle, "KvpRegisterSpeakerByStream");
         if(!KvpRegisterSpeakerByStreamFunc){
             qDebug() << "Error: KvpRegisterSpeakerByStream 函数获取失败";
             return false;
         }
-        KvpRegisterSpeakerByStreamFunc(m_kvp_client_ptr,ret,utt,utt_size,vp_node,vp_dir,spk_id);
+        ret = KvpRegisterSpeakerByStreamFunc(utt,utt_size,vp_node,vp_dir,spk_id);
     }catch(std::exception ex)
     {
         qDebug() << "Error:" << ex.what();
@@ -171,7 +191,32 @@ bool RPC_Kvp_Tool::KvpRegisterSpeakerByStream(_Rpc_ModelInfo* ret, int16_t* utt,
     return true;
 }
 
-bool RPC_Kvp_Tool::KvpIdentifyTopSpeakerByStream(_Rpc_TopSpeakerInfo* ret, int16_t* utt, int utt_size, const char** vp_node_arr, int vp_node_arr_size, int node_num, int top_n, int utt_type)
+void RPC_Kvp_Tool::Delete_Rpc_ModelInfo(_Rpc_ModelInfo* ptr)
+{
+    try{
+        if(m_rpc_dllHandle == nullptr) {
+            return;
+        }
+
+        if(!m_is_open){
+            if(!KvpServiceClient_Open(kvp_ip,kvp_port))
+                return;
+        }
+
+        typedef void (*Delete_Rpc_ModelInfo)(_Rpc_ModelInfo *ptr);
+        Delete_Rpc_ModelInfo Delete_Rpc_ModelInfoFunc = (Delete_Rpc_ModelInfo)GetProcAddress(m_rpc_dllHandle, "Delete_Rpc_ModelInfo");
+        if(!Delete_Rpc_ModelInfoFunc){
+            qDebug() << "Error: Delete_Rpc_ModelInfo 函数获取失败";
+            return;
+        }
+        Delete_Rpc_ModelInfoFunc(ptr);
+    }catch(std::exception ex)
+    {
+        qDebug() << "Error:" << ex.what();
+    }
+}
+
+bool RPC_Kvp_Tool::KvpIdentifyTopSpeakerByStream(_Rpc_TopSpeakerInfo* &ret, int16_t* utt, int utt_size, const char** vp_node_arr, int vp_node_arr_size, int node_num, int top_n, int utt_type)
 {
     try{
         if(m_rpc_dllHandle == nullptr) {
@@ -183,18 +228,43 @@ bool RPC_Kvp_Tool::KvpIdentifyTopSpeakerByStream(_Rpc_TopSpeakerInfo* ret, int16
                 return false;
         }
 
-        typedef void (*KvpIdentifyTopSpeakerByStream)(void* client_ptr, _Rpc_TopSpeakerInfo* ret, int16_t* utt, int utt_size, const char** vp_node_arr, int vp_node_arr_size, int node_num, int top_n, int utt_type);
+        typedef _Rpc_TopSpeakerInfo* (*KvpIdentifyTopSpeakerByStream)(int16_t* utt, int utt_size, const char** vp_node_arr, int vp_node_arr_size, int node_num, int top_n, int utt_type);
         KvpIdentifyTopSpeakerByStream KvpIdentifyTopSpeakerByStreamFunc = (KvpIdentifyTopSpeakerByStream)GetProcAddress(m_rpc_dllHandle, "KvpIdentifyTopSpeakerByStream");
         if(!KvpIdentifyTopSpeakerByStreamFunc){
             qDebug() << "Error: KvpIdentifyTopSpeakerByStream 函数获取失败";
             return false;
         }
-        KvpIdentifyTopSpeakerByStreamFunc(m_kvp_client_ptr,ret,utt,utt_size,vp_node_arr,vp_node_arr_size,node_num,top_n,utt_type);
+        ret = KvpIdentifyTopSpeakerByStreamFunc(utt,utt_size,vp_node_arr,vp_node_arr_size,node_num,top_n,utt_type);
     }catch(std::exception ex)
     {
         qDebug() << "Error:" << ex.what();
     }
     return true;
+}
+
+void RPC_Kvp_Tool::Delete_Rpc_TopSpeakerInfo(_Rpc_TopSpeakerInfo* ptr)
+{
+    try{
+        if(m_rpc_dllHandle == nullptr) {
+            return;
+        }
+
+        if(!m_is_open){
+            if(!KvpServiceClient_Open(kvp_ip,kvp_port))
+                return;
+        }
+
+        typedef void (*Delete_Rpc_TopSpeakerInfo)(_Rpc_TopSpeakerInfo *ptr);
+        Delete_Rpc_TopSpeakerInfo Delete_Rpc_TopSpeakerInfoFunc = (Delete_Rpc_TopSpeakerInfo)GetProcAddress(m_rpc_dllHandle, "Delete_Rpc_TopSpeakerInfo");
+        if(!Delete_Rpc_TopSpeakerInfoFunc){
+            qDebug() << "Error: Delete_Rpc_TopSpeakerInfo 函数获取失败";
+            return;
+        }
+        Delete_Rpc_TopSpeakerInfoFunc(ptr);
+    }catch(std::exception ex)
+    {
+        qDebug() << "Error:" << ex.what();
+    }
 }
 
 bool RPC_Kvp_Tool::KvpGetFingerprint(char* fingerprint)
@@ -209,13 +279,14 @@ bool RPC_Kvp_Tool::KvpGetFingerprint(char* fingerprint)
                 return false;
         }
 
-        typedef void (*KvpGetFingerprint)(void* client_ptr, char* fingerprint);
+        typedef const char* (*KvpGetFingerprint)();
         KvpGetFingerprint KvpGetFingerprintFunc = (KvpGetFingerprint)GetProcAddress(m_rpc_dllHandle, "KvpGetFingerprint");
         if(!KvpGetFingerprintFunc){
             qDebug() << "Error: KvpGetFingerprint 函数获取失败";
             return false;
         }
-        KvpGetFingerprintFunc(m_kvp_client_ptr,fingerprint);
+        const char* str = KvpGetFingerprintFunc();
+        strcpy(fingerprint,str);
     }catch(std::exception ex)
     {
         qDebug() << "Error:" << ex.what();
@@ -236,13 +307,13 @@ bool RPC_Kvp_Tool::KvpIsLicenceValid()
                 return false;
         }
 
-        typedef bool (*KvpIsLicenceValid)(void* client_ptr);
+        typedef bool (*KvpIsLicenceValid)();
         KvpIsLicenceValid KvpIsLicenceValidFunc = (KvpIsLicenceValid)GetProcAddress(m_rpc_dllHandle, "KvpIsLicenceValid");
         if(!KvpIsLicenceValidFunc){
             qDebug() << "Error: KvpIsLicenceValid 函数获取失败";
             return false;
         }
-        flag = KvpIsLicenceValidFunc(m_kvp_client_ptr);
+        flag = KvpIsLicenceValidFunc();
     }catch(std::exception ex)
     {
         qDebug() << "Error:" << ex.what();
@@ -250,7 +321,7 @@ bool RPC_Kvp_Tool::KvpIsLicenceValid()
     return flag;
 }
 
-bool RPC_Kvp_Tool::KvpGetLicenceInfo(_Rpc_LicenceInfo* ret)
+bool RPC_Kvp_Tool::KvpGetLicenceInfo(_Rpc_LicenceInfo* &ret)
 {
     try{
         if(m_rpc_dllHandle == nullptr) {
@@ -262,18 +333,43 @@ bool RPC_Kvp_Tool::KvpGetLicenceInfo(_Rpc_LicenceInfo* ret)
                 return false;
         }
 
-        typedef void (*KvpGetLicenceInfo)(void *client_ptr, _Rpc_LicenceInfo* licence);
+        typedef _Rpc_LicenceInfo* (*KvpGetLicenceInfo)();
         KvpGetLicenceInfo KvpGetLicenceInfoFunc = (KvpGetLicenceInfo)GetProcAddress(m_rpc_dllHandle, "KvpGetLicenceInfo");
         if(!KvpGetLicenceInfoFunc){
             qDebug() << "Error: KvpGetLicenceInfo 函数获取失败";
             return false;
         }
-        KvpGetLicenceInfoFunc(m_kvp_client_ptr, ret);
+        ret = KvpGetLicenceInfoFunc();
     }catch(std::exception ex)
     {
         qDebug() << "Error:" << ex.what();
     }
     return true;
+}
+
+void RPC_Kvp_Tool::Delete_Rpc_LicenceInfo(_Rpc_LicenceInfo* ptr)
+{
+    try{
+        if(m_rpc_dllHandle == nullptr) {
+            return;
+        }
+
+        if(!m_is_open){
+            if(!KvpServiceClient_Open(kvp_ip,kvp_port))
+                return;
+        }
+
+        typedef void (*Delete_Rpc_LicenceInfo)(_Rpc_LicenceInfo *ptr);
+        Delete_Rpc_LicenceInfo Delete_Rpc_LicenceInfoFunc = (Delete_Rpc_LicenceInfo)GetProcAddress(m_rpc_dllHandle, "Delete_Rpc_LicenceInfo");
+        if(!Delete_Rpc_LicenceInfoFunc){
+            qDebug() << "Error: Delete_Rpc_LicenceInfo 函数获取失败";
+            return;
+        }
+        Delete_Rpc_LicenceInfoFunc(ptr);
+    }catch(std::exception ex)
+    {
+        qDebug() << "Error:" << ex.what();
+    }
 }
 
 int32_t RPC_Kvp_Tool::KvpSetLicence(const char* licence)
@@ -289,144 +385,16 @@ int32_t RPC_Kvp_Tool::KvpSetLicence(const char* licence)
                 return false;
         }
 
-        typedef int32_t (*KvpSetLicence)(void *client_ptr, const char* licence);
+        typedef int32_t (*KvpSetLicence)(const char* licence);
         KvpSetLicence KvpSetLicenceFunc = (KvpSetLicence)GetProcAddress(m_rpc_dllHandle, "KvpSetLicence");
         if(!KvpSetLicenceFunc){
             qDebug() << "Error: KvpSetLicence 函数获取失败";
             return false;
         }
-        flag = KvpSetLicenceFunc(m_kvp_client_ptr, licence);
+        flag = KvpSetLicenceFunc(licence);
     }catch(std::exception ex)
     {
         qDebug() << "Error:" << ex.what();
     }
     return flag;
-}
-
-bool RPC_Kvp_Tool::createTransport(const char* ip,int port)
-{
-    try{
-        if(m_rpc_dllHandle == nullptr) {
-            return false;
-        }
-
-        typedef void* (*CreateTransport)(const char* ip,int port);
-        CreateTransport CreateTransportFunc = (CreateTransport)GetProcAddress(m_rpc_dllHandle, "CreateTransport");
-        if(!CreateTransportFunc){
-            qDebug() << "Error: CreateTransport 函数获取失败";
-            return false;
-        }
-        m_transport_ptr = CreateTransportFunc(ip, port);
-        return true;
-    }catch(std::exception ex)
-    {
-        qDebug() << "Error:" << ex.what();
-        return false;
-    }
-}
-
-bool RPC_Kvp_Tool::createKvpServiceClient()
-{
-    try{
-        if(m_rpc_dllHandle == nullptr) {
-            return false;
-        }
-
-        typedef void* (*CreateKvpServiceClient)(void* transport_ptr);
-        CreateKvpServiceClient CreateKvpServiceClientFunc = (CreateKvpServiceClient)GetProcAddress(m_rpc_dllHandle, "CreateKvpServiceClient");
-        if(!CreateKvpServiceClientFunc){
-            qDebug() << "Error: CreateKvpServiceClient 函数获取失败";
-            return false;
-        }
-        m_kvp_client_ptr = CreateKvpServiceClientFunc(m_transport_ptr);
-        return true;
-    }catch(std::exception ex)
-    {
-        qDebug() << "Error:" << ex.what();
-        return false;
-    }
-}
-
-void RPC_Kvp_Tool::transportOpen()
-{
-    try{
-        if(m_rpc_dllHandle == nullptr) {
-            return;
-        }
-
-        typedef void (*TransportOpen)(void* transport_ptr);
-        TransportOpen TransportOpenFunc = (TransportOpen)GetProcAddress(m_rpc_dllHandle, "TransportOpen");
-        if(!TransportOpenFunc){
-            qDebug() << "Error: TransportOpen 函数获取失败";
-            return;
-        }
-        TransportOpenFunc(m_transport_ptr);
-    }catch(std::exception ex)
-    {
-        qDebug() << "Error:" << ex.what();
-    }
-}
-
-void RPC_Kvp_Tool::transportClose()
-{
-    try{
-        if(m_rpc_dllHandle == nullptr) {
-            return;
-        }
-
-        typedef void (*TransportClose)(void* transport_ptr);
-        TransportClose TransportCloseFunc = (TransportClose)GetProcAddress(m_rpc_dllHandle, "TransportClose");
-        if(!TransportCloseFunc){
-            qDebug() << "Error: TransportClose 函数获取失败";
-            return;
-        }
-        TransportCloseFunc(m_transport_ptr);
-    }catch(std::exception ex)
-    {
-        qDebug() << "Error:" << ex.what();
-    }
-}
-
-bool RPC_Kvp_Tool::deleteKvpServiceClient()
-{ 
-    try{
-        if(m_rpc_dllHandle == nullptr) {
-            return true;
-        }
-
-        typedef void (*DeleteKvpServiceClient)(void* client_ptr);
-        DeleteKvpServiceClient DeleteKvpServiceClientFunc = (DeleteKvpServiceClient)GetProcAddress(m_rpc_dllHandle, "DeleteKvpServiceClient");
-        if(!DeleteKvpServiceClientFunc){
-            qDebug() << "Error: DeleteKvpServiceClient 函数获取失败";
-            return false;
-        }
-        DeleteKvpServiceClientFunc(m_kvp_client_ptr);
-        return true;
-    }catch(std::exception ex)
-    {
-        qDebug() << "Error:" << ex.what();
-        return false;
-    }
-}
-
-bool RPC_Kvp_Tool::deleteTransport()
-{
-    try{
-        if(m_rpc_dllHandle == nullptr) {
-            return true;
-        }
-
-        typedef void (*DeleteTransport)(void* client_ptr);
-        DeleteTransport DeleteTransportFunc = (DeleteTransport)GetProcAddress(m_rpc_dllHandle, "DeleteTransport");
-        if(!DeleteTransportFunc){
-            qDebug() << "Error: DeleteTransport 函数获取失败";
-            return false;
-        }
-        DeleteTransportFunc(m_transport_ptr);
-        return true;
-    }catch(std::exception ex)
-    {
-        qDebug() << "Error:" << ex.what();
-        return false;
-    }
 }

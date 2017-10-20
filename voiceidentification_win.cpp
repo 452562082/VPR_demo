@@ -8,6 +8,7 @@
 #include <QDebug>
 #include <QHBoxLayout>
 #include <QVBoxLayout>
+#include <memory>
 #include "soundsdata_db.h"
 #include "masklabel.h"
 
@@ -128,6 +129,7 @@ VoiceIdentification_win::~VoiceIdentification_win()
 
 void VoiceIdentification_win::paintEvent(QPaintEvent *e)
 {
+    Q_UNUSED(e)
     QPainter painter(this);
     //背景绘制
     painter.drawPixmap(0,0,width(),height(),QPixmap("://images/bg.png"));
@@ -137,8 +139,7 @@ void VoiceIdentification_win::identifyBtn_clicked()
 {
     m_registrantHeadLab->hide();
     m_identifyInfoLab->setText("");
-//    auto callback = [=](int val)->void{m_PCMWaveform_widget->UpdateForm(val);};
-    m_audio->record(30000);
+    m_audio->record(15000);
 }
 
 void VoiceIdentification_win::update_pcmWave(int volume)
@@ -149,19 +150,28 @@ void VoiceIdentification_win::update_pcmWave(int volume)
 void VoiceIdentification_win::record_timeout(QByteArray buf,int len)
 {
     RPC_Kvp_Tool *rpc_tool = RPC_Kvp_Tool::GetInstance();
-    _Rpc_TopSpeakerInfo* ret = new _Rpc_TopSpeakerInfo();
+    _Rpc_TopSpeakerInfo *ret = nullptr;
     rpc_tool->KvpIdentifyTopSpeakerByStream(ret, (short*)buf.data(), len, &vp_node,1,1, 1, 0);
-    m_error_code = ret->ErrCode;
-    if(ret->ErrCode == 0 && ret->Top != 0){
+    if(ret != nullptr && ret->ErrCode == 0 && ret->Top != 0){
+        m_error_code = ret->ErrCode;
         SoundsData_db *db = SoundsData_db::GetInstance();
         RegistrantInfo registrant_info;
         if(ret->Scores != nullptr){
-            db->GetRegistrantInfoBySpkId(ret->Scores->Spkid, registrant_info);
+            //取最高得分
+            int max_score_index = 0;
+            for(int i = 0;i < ret->Scores_size;++i){
+                if(ret->Scores[i]->Score > ret->Scores[max_score_index]->Score){
+                    max_score_index = i;
+                }
+            }
+            db->GetRegistrantInfoBySpkId(ret->Scores[max_score_index]->Spkid, registrant_info);
         }
         m_registrantHeadLab->show();
         m_registrantHeadLab->setPixmap(QPixmap(registrant_info.head_path));
         m_identifyInfoLab->setText(registrant_info.name);
+        rpc_tool->Delete_Rpc_TopSpeakerInfo(ret);
     }else{
+        m_error_code = ret->ErrCode;
         m_identifyInfoLab->setText("识别失败");
     }
 }
