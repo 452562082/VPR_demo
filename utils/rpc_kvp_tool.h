@@ -9,6 +9,8 @@ class RPC_Kvp_Tool
 {
 public:
     static RPC_Kvp_Tool* GetInstance();
+    void setKvpIp(const std::string &kvp_ip);
+    void setKvpPort(int kvp_port);
     bool KvpServiceClient_Open(const char* ip,int port);
     bool KvpServiceClient_close();
 
@@ -43,7 +45,7 @@ public:
     /// @brief 获取授权信息
     bool KvpGetLicenceInfo(_Rpc_LicenceInfo* &ret);
     /// @brief 动态设置授权码
-    int32_t KvpSetLicence(const char* licence);
+    bool KvpSetLicence(int32_t &ret, const char* licence);
 
     /// @brief 删除_Rpc_ModelInfo指针
     void Delete_Rpc_ModelInfo(_Rpc_ModelInfo* ptr);
@@ -59,6 +61,8 @@ private:
     static RPC_Kvp_Tool* m_instance;
     HINSTANCE m_rpc_dllHandle;
     bool m_is_open;
+    std::string m_kvp_ip;
+    int m_kvp_port;
 };
 
 #endif // RPC_KVP_TOOL_H

@@ -1,7 +1,6 @@
 #include "pcmwaveform_widget.h"
 #include "ui_pcmwaveform_widget.h"
 #include <QHBoxLayout>
-#include <QDebug>
 
 PCMWaveform_widget::PCMWaveform_widget(QWidget *parent) :
     QWidget(parent),

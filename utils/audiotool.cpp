@@ -1,5 +1,5 @@
 #include "audiotool.h"
-#include <QDebug>
+#include "utils/logger.h"
 
 namespace{
     struct WAVFILEHEADER
@@ -137,7 +137,7 @@ void AudioTool::record(int timer_msec)
         stopRecord();
         break;
     default:
-        qDebug() << "Error: audio is playing";
+        Logger::Warning("AUDIO - audio is playing");
         break;
     }
 }
@@ -145,7 +145,7 @@ void AudioTool::record(int timer_msec)
 bool AudioTool::startRecord(int timer_msec)
 {
     if(m_audioStatus != AudioToolStatus::Freetime) {
-        qDebug() << "Error: audio is not free";
+        Logger::Error("AUDIO - audio is not free");
         return false;
     }
 
@@ -241,7 +241,7 @@ void AudioTool::stopRecord()
 bool AudioTool::startPlay()
 {
     if(m_audioStatus != AudioToolStatus::Freetime) {
-        qDebug() << "Error: audio is not free";
+        Logger::Error("AUDIO - audio is not free");
         return false;
     }
 
@@ -328,13 +328,13 @@ bool AudioTool::initAudioFormat()
 {
     QAudioDeviceInfo audioDeviceInfo = QAudioDeviceInfo::defaultInputDevice();
     if(audioDeviceInfo.isNull()){
-        qDebug() << "Error: No Record Device";
+        Logger::Error("AUDIO - No Record Device");
         return false;
     }
 
     if (!audioDeviceInfo.isFormatSupported(m_audioFormat))
     {
-        qDebug() << "Error: Default format not supported";
+        Logger::Error("AUDIO - Default format not supported");
         return false;
     }
     return true;

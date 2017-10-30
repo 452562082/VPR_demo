@@ -31,6 +31,9 @@ private:
     PCMWaveform_widget *m_PCMWaveform_widget;//声纹波形显示控件
     QPushButton *m_returnBtn;//返回按钮句柄
     QPushButton *m_registerBtn;//声纹注册按钮
+    QLabel *m_countDownLab;//倒计时显示控件
+    int m_cur_countDownNum;
+    QTimer *m_countDownTimer;//倒计时计时器
     AudioTool *m_audio;//音频工具
 private:
     QString m_buf_name;
@@ -45,6 +48,7 @@ private slots:
     void returnBtn_clicked();
     void registrantHeadLab_clicked();
     void registerBtn_clicked();
+    void updateCountDownLab();
 };
 
 #endif // VoiceRegistration_win_H

@@ -4,6 +4,7 @@
 #include <QWidget>
 #include <QPushButton>
 #include <QLabel>
+#include "soundsdata_db.h"
 
 namespace Ui {
 class VoiceIdentification_win;
@@ -30,8 +31,12 @@ private:
     QLabel *m_identifyInfoLab;//声纹识别信息显示句柄
     PCMWaveform_widget* m_PCMWaveform_widget;//波形图显示控件句柄
     QPushButton *m_identifyBtn;//声纹识别句柄
+    QLabel *m_countDownLab;//倒计时显示控件
+    int m_cur_countDownNum;
+    QTimer *m_countDownTimer;//倒计时计时器
     AudioTool *m_audio;//音频工具
     int m_error_code;
+    QString m_local_head_path;
 
 signals:
     void switchToVoiceLibWin();
@@ -43,6 +48,8 @@ private slots:
     void voiceRegistrationWin_showBtn_clicked();
     void voiceLibWin_showBtn_clicked();
     void identifyBtn_clicked();
+    void updateCountDownLab();
+    void updateRegistantHeadLab();
 };
 
 #endif // VoiceIdentification_win_H

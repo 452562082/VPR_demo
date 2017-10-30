@@ -3,7 +3,8 @@
 
 #include <QWidget>
 #include <QScrollArea>
-#include <QList>
+//#include <QList>
+#include <QMap>
 
 namespace Ui {
 class VoiceLibTable_widget;
@@ -22,7 +23,7 @@ public:
     void bindData();
     void clear();
     void addWidget(QWidget *widget);
-    void removeItem(RegistrantInfo *info);
+    void removeItem(RegistrantItem_widget *item);
 
 private:
     void clearLayout(QLayout *layout);
@@ -33,10 +34,11 @@ private:
     int m_current_column;
     QWidget *m_centerWidget;
     QGridLayout *m_centerWidget_main_layout;
-    QList<RegistrantInfo*> m_registrantInfoList;
+//    QList<RegistrantInfo*> m_registrantInfoList;
+    QMap<RegistrantItem_widget*,RegistrantInfo> m_registrantItemMap;
 
 private slots:
-    void removeRegistrantItem(RegistrantInfo* widget);
+    void removeRegistrantItem();
 };
 
 #endif // REGISTEREDUSERS_WIDGET_H

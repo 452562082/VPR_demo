@@ -8,11 +8,10 @@
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QFileDialog>
-#include <QDebug>
 #include <QMessageBox>
 #include <QCryptographicHash>
 #include "masklabel.h"
-#include <memory>
+#include "utils/httpsender.h"
 
 namespace{
     const char* vp_node = "Test_RPC";
@@ -22,7 +21,8 @@ VoiceRegistration_win::VoiceRegistration_win(QWidget *parent) :
     QWidget(parent),
     ui(new Ui::VoiceRegistration_win),
     m_buf_name(""),
-    m_buf_head_path("")
+    m_buf_head_path(""),
+    m_countDownTimer(nullptr)
 {
     ui->setupUi(this);
 
@@ -96,6 +96,15 @@ VoiceRegistration_win::VoiceRegistration_win(QWidget *parent) :
     bottom_fifth_layout->addStretch(1);
     bottom_fifth_layout->addWidget(registerLab);
     bottom_fifth_layout->addStretch(1);
+    //创建倒计时显示控件
+    m_countDownLab = new QLabel(this);
+    m_countDownLab->setStyleSheet("* {color: #3ddcf6; font-size: 30px;}");
+    m_countDownLab->hide();
+    QHBoxLayout *bottom_sixth_layout = new QHBoxLayout;
+    bottom_sixth_layout->addStretch(1);
+    bottom_sixth_layout->addWidget(m_countDownLab);
+    bottom_sixth_layout->addStretch(1);
+
     QVBoxLayout *bottom_layout = new QVBoxLayout;
     bottom_layout->addSpacing(40);
     bottom_layout->addLayout(bottom_first_layout);
@@ -104,6 +113,8 @@ VoiceRegistration_win::VoiceRegistration_win(QWidget *parent) :
     bottom_layout->addLayout(bottom_third_layout);
     bottom_layout->addLayout(bottom_fourth_layout);
     bottom_layout->addLayout(bottom_fifth_layout);
+    bottom_layout->addSpacing(10);
+    bottom_layout->addLayout(bottom_sixth_layout);
     bottom_layout->addStretch(1);
 
     QVBoxLayout *main_layout = new QVBoxLayout;
@@ -164,6 +175,14 @@ void VoiceRegistration_win::registerBtn_clicked()
     }
     m_buf_name = m_registrantNameEdit->text();
     m_audio->record(20000);
+    if(m_countDownTimer == nullptr){
+        m_countDownTimer = new QTimer(this);
+        connect(m_countDownTimer,SIGNAL(timeout()),this,SLOT(updateCountDownLab()));
+    }
+    m_countDownLab->setText("20");
+    m_countDownLab->show();
+    m_cur_countDownNum = 20;
+    m_countDownTimer->start(1000);
 }
 
 void VoiceRegistration_win::update_pcmWave(int volume)
@@ -183,8 +202,12 @@ void VoiceRegistration_win::record_timeout(QByteArray buf,int len)
         return;
     }
     if(ret->ErrCode == 0){
+        HttpSender *http_sender = HttpSender::GetInstance();
+        QString head_path = spk_id + m_buf_head_path.right(m_buf_head_path.length() - m_buf_head_path.lastIndexOf('.'));
+        http_sender->uploadFile(m_buf_head_path,head_path);
+
         SoundsData_db *db = SoundsData_db::GetInstance();
-        db->AddRegistrantInfo(spk_id,m_buf_name,m_buf_head_path);
+        db->AddRegistrantInfo(spk_id,m_buf_name,head_path);
         QMessageBox::information(this,tr("信息"),QString("注册成功"),QMessageBox::Yes);
     }else{
         QMessageBox::warning(this,tr("错误"),QString("注册失败,错误码为%1,错误信息:%2").arg(QString::number(ret->ErrCode, 10)).arg(ret->ErrMsg),QMessageBox::Yes);
@@ -195,4 +218,15 @@ void VoiceRegistration_win::record_timeout(QByteArray buf,int len)
 void VoiceRegistration_win::returnBtn_clicked()
 {
     emit switchToVoiceIdentificationWin();
+}
+
+void VoiceRegistration_win::updateCountDownLab()
+{
+    m_cur_countDownNum--;
+    if(m_cur_countDownNum == 0){
+        m_countDownLab->hide();
+        m_countDownTimer->stop();
+    }else{
+        m_countDownLab->setText(QString::number(m_cur_countDownNum,10));
+    }
 }

@@ -11,6 +11,7 @@ MainWindow::MainWindow(QWidget *parent) :
     ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
+
     m_voiceIdentification_win = new VoiceIdentification_win;
     m_voiceLib_win = new VoiceLib_win;
     m_voiceRegistration_win = new VoiceRegistration_win;

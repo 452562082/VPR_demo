@@ -5,12 +5,11 @@
 #include "utils/rpc_kvp_tool.h"
 #include <QPainter>
 #include <QCryptographicHash>
-#include <QDebug>
+#include <QDir>
 #include <QHBoxLayout>
 #include <QVBoxLayout>
-#include <memory>
-#include "soundsdata_db.h"
 #include "masklabel.h"
+#include "utils/httpsender.h"
 
 namespace{
     const char* vp_node = "Test_RPC";
@@ -18,6 +17,7 @@ namespace{
 
 VoiceIdentification_win::VoiceIdentification_win(QWidget *parent) :
     QWidget(parent),
+    m_countDownTimer(nullptr),
     ui(new Ui::VoiceIdentification_win)
 {
     ui->setupUi(this);
@@ -94,6 +94,15 @@ VoiceIdentification_win::VoiceIdentification_win(QWidget *parent) :
     bottom_fifth_layout->addStretch(1);
     bottom_fifth_layout->addWidget(identifyLab);
     bottom_fifth_layout->addStretch(1);
+    //创建倒计时显示控件
+    m_countDownLab = new QLabel(this);
+    m_countDownLab->setStyleSheet("* {color: #3ddcf6; font-size: 30px;}");
+    m_countDownLab->hide();
+    QHBoxLayout *bottom_sixth_layout = new QHBoxLayout;
+    bottom_sixth_layout->addStretch(1);
+    bottom_sixth_layout->addWidget(m_countDownLab);
+    bottom_sixth_layout->addStretch(1);
+
     QVBoxLayout *bottom_layout = new QVBoxLayout;
     bottom_layout->addSpacing(40);
     bottom_layout->addLayout(bottom_first_layout);
@@ -102,6 +111,8 @@ VoiceIdentification_win::VoiceIdentification_win(QWidget *parent) :
     bottom_layout->addLayout(bottom_third_layout);
     bottom_layout->addLayout(bottom_fourth_layout);
     bottom_layout->addLayout(bottom_fifth_layout);
+    bottom_layout->addSpacing(10);
+    bottom_layout->addLayout(bottom_sixth_layout);
     bottom_layout->addStretch(1);
 
     QVBoxLayout *main_layout = new QVBoxLayout;
@@ -140,6 +151,14 @@ void VoiceIdentification_win::identifyBtn_clicked()
     m_registrantHeadLab->hide();
     m_identifyInfoLab->setText("");
     m_audio->record(15000);
+    if(m_countDownTimer == nullptr){
+        m_countDownTimer = new QTimer(this);
+        connect(m_countDownTimer,SIGNAL(timeout()),this,SLOT(updateCountDownLab()));
+    }
+    m_countDownLab->setText("15");
+    m_countDownLab->show();
+    m_cur_countDownNum = 15;
+    m_countDownTimer->start(1000);
 }
 
 void VoiceIdentification_win::update_pcmWave(int volume)
@@ -166,8 +185,23 @@ void VoiceIdentification_win::record_timeout(QByteArray buf,int len)
             }
             db->GetRegistrantInfoBySpkId(ret->Scores[max_score_index]->Spkid, registrant_info);
         }
-        m_registrantHeadLab->show();
-        m_registrantHeadLab->setPixmap(QPixmap(registrant_info.head_path));
+
+        QString head_dir_name = QDir::currentPath() + "/headImages/";
+        QDir head_dir;
+        if(!head_dir.exists(head_dir_name)){
+            head_dir.mkdir(head_dir_name);
+        }
+        QString local_head_path = head_dir_name + registrant_info.spk_id + registrant_info.head_path.right(registrant_info.head_path.length() - registrant_info.head_path.lastIndexOf('.'));
+        m_local_head_path = local_head_path;
+        if(!QFile::exists(local_head_path)){
+            HttpSender *http_sender = HttpSender::GetInstance();
+            http_sender->downloadFile(registrant_info.head_path,local_head_path);
+            connect(http_sender,SIGNAL(finished()),this,SLOT(updateRegistantHeadLab()));
+        }else{
+            m_registrantHeadLab->show();
+            m_registrantHeadLab->setPixmap(QPixmap(local_head_path));
+        }
+
         m_identifyInfoLab->setText(registrant_info.name);
         rpc_tool->Delete_Rpc_TopSpeakerInfo(ret);
     }else{
@@ -184,4 +218,21 @@ void VoiceIdentification_win::voiceRegistrationWin_showBtn_clicked()
 void VoiceIdentification_win::voiceLibWin_showBtn_clicked()
 {
     emit switchToVoiceLibWin();
+}
+
+void VoiceIdentification_win::updateCountDownLab()
+{
+    m_cur_countDownNum--;
+    if(m_cur_countDownNum == 0){
+        m_countDownLab->hide();
+        m_countDownTimer->stop();
+    }else{
+        m_countDownLab->setText(QString::number(m_cur_countDownNum,10));
+    }
+}
+
+void VoiceIdentification_win::updateRegistantHeadLab()
+{
+    m_registrantHeadLab->show();
+    m_registrantHeadLab->setPixmap(QPixmap(m_local_head_path));
 }

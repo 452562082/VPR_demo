@@ -24,7 +24,11 @@ SOURCES += main.cpp\
     mainwindow.cpp \
     voiceidentification_win.cpp \
     voicelib_win.cpp \
-    voiceregistration_win.cpp
+    voiceregistration_win.cpp \
+    utils/qftp.cpp \
+    utils/qurlinfo.cpp \
+    utils/logger.cpp \
+    utils/httpsender.cpp
 
 HEADERS  += \
     soundsdata_db.h \
@@ -39,7 +43,12 @@ HEADERS  += \
     mainwindow.h \
     voiceidentification_win.h \
     voicelib_win.h \
-    voiceregistration_win.h
+    voiceregistration_win.h \
+    configparser.h \
+    utils/qftp.h \
+    utils/qurlinfo.h \
+    utils/logger.h \
+    utils/httpsender.h
 
 FORMS    += \
     pcmwaveform_widget.ui \

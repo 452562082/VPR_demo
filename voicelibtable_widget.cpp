@@ -2,10 +2,12 @@
 #include "ui_VoiceLibTable_widget.h"
 #include "soundsdata_db.h"
 #include <QLabel>
-#include <QDebug>
 #include <QGridLayout>
+#include <QDir>
 #include "registrantitem_widget.h"
 #include "utils/rpc_kvp_tool.h"
+#include "utils/httpsender.h"
+#include "utils/logger.h"
 
 VoiceLibTable_widget::VoiceLibTable_widget(QWidget *parent) :
     QScrollArea(parent),
@@ -27,13 +29,6 @@ VoiceLibTable_widget::VoiceLibTable_widget(QWidget *parent) :
 
 VoiceLibTable_widget::~VoiceLibTable_widget()
 {
-    for(QList<RegistrantInfo*>::iterator it = m_registrantInfoList.begin();it != m_registrantInfoList.end();++it){
-        if(*it != nullptr){
-            delete *it;
-            *it = nullptr;
-        }
-    }
-    m_registrantInfoList.clear();
     delete ui;
 }
 
@@ -78,14 +73,17 @@ void VoiceLibTable_widget::addWidget(QWidget *widget)
     }
 }
 
-void VoiceLibTable_widget::removeItem(RegistrantInfo *info)
+void VoiceLibTable_widget::removeItem(RegistrantItem_widget *item)
 {
-    m_registrantInfoList.removeAll(info);
+    m_registrantItemMap.remove(item);
+    QList<RegistrantInfo> registrantInfoList = m_registrantItemMap.values();
+    m_registrantItemMap.clear();
     clear();
-    for(int i = 0;i < m_registrantInfoList.count();++i){
-        RegistrantItem_widget *item = new RegistrantItem_widget(m_registrantInfoList.at(i),this);
-        connect(item,SIGNAL(removeRegistrant(RegistrantInfo*)),this,SLOT(removeRegistrantItem(RegistrantInfo*)));
+    for(int i = 0;i < registrantInfoList.size();++i){
+        RegistrantItem_widget *item = new RegistrantItem_widget(registrantInfoList[i],this);
+        connect(item,SIGNAL(removeRegistrant()),this,SLOT(removeRegistrantItem()));
         addWidget(item);
+        m_registrantItemMap.insert(item,registrantInfoList[i]);
     }
     this->widget()->update();
 }
@@ -93,42 +91,58 @@ void VoiceLibTable_widget::removeItem(RegistrantInfo *info)
 void VoiceLibTable_widget::bindData()
 {
     this->clear();
-    for(QList<RegistrantInfo*>::iterator it = m_registrantInfoList.begin();it != m_registrantInfoList.end();++it){
-        if(*it != nullptr){
-            delete *it;
-            *it = nullptr;
-        }
-    }
-    m_registrantInfoList.clear();
+    m_registrantItemMap.clear();
     SoundsData_db *db = SoundsData_db::GetInstance();
     QVector<RegistrantInfo> infos;
     if(!db->GetAllRegistrantsInfo(infos)){
         return;
+    }    
+
+    QString head_dir_name = QDir::currentPath() + "/headImages/";
+    QDir head_dir;
+    if(!head_dir.exists(head_dir_name)){
+        head_dir.mkdir(head_dir_name);
     }
 
+    HttpSender *http_sender = HttpSender::GetInstance();
     for(int i = 0;i < infos.size();++i){
-        RegistrantInfo *info = new RegistrantInfo(infos[i]);
-        RegistrantItem_widget *item = new RegistrantItem_widget(info,this);
-        connect(item,SIGNAL(removeRegistrant(RegistrantInfo*)),this,SLOT(removeRegistrantItem(RegistrantInfo*)));
+        QString local_head_path = head_dir_name + infos[i].spk_id + infos[i].head_path.right(infos[i].head_path.length() - infos[i].head_path.lastIndexOf('.'));
+        infos[i].local_head_path = local_head_path;
+        RegistrantItem_widget *item = new RegistrantItem_widget(infos[i],this);
+        if(!QFile::exists(local_head_path)){
+            http_sender->downloadFile(infos[i].head_path,local_head_path);
+            connect(http_sender,SIGNAL(finished()),item,SLOT(updateHeadImg()));
+        }
+
+        connect(item,SIGNAL(removeRegistrant()),this,SLOT(removeRegistrantItem()));
         addWidget(item);
-        m_registrantInfoList.append(info);
+        m_registrantItemMap.insert(item,infos[i]);
     }
 
     this->widget()->update();
 }
 
-void VoiceLibTable_widget::removeRegistrantItem(RegistrantInfo* info)
+void VoiceLibTable_widget::removeRegistrantItem()
 {
+    RegistrantItem_widget *item = qobject_cast<RegistrantItem_widget*>(sender());
+    RegistrantInfo info(m_registrantItemMap.value(item));
     RPC_Kvp_Tool *rpc_kvp = RPC_Kvp_Tool::GetInstance();
     int ret = -1;
-    if(!rpc_kvp->KvpModelRemoveBySpkid(ret,"Test_RPC","/tmp/asv/",info->spk_id.toStdString().c_str()) || ret != 0){
-        qDebug() << "Error: RPC remove Spkid failed";
+    if(!rpc_kvp->KvpModelRemoveBySpkid(ret,"Test_RPC","/tmp/asv/",info.spk_id.toStdString().c_str()) || ret != 0){
+        Logger::Error(QString("RPC - remove Spkid %1 failed.").arg(info.spk_id));
         return;
     }
+    Logger::Info(QString("RPC - remove Spkid %1 success.").arg(info.spk_id));
     SoundsData_db *db = SoundsData_db::GetInstance();
-    if(!db->DeleteRegistrantInfoBySpkId(info->spk_id)){
-        qDebug() << "Error: SQL remove Spkid failed";
+    if(!db->DeleteRegistrantInfoBySpkId(info.spk_id)){
+        Logger::Error(QString("SQL - remove Spkid %1 failed.").arg(info.spk_id));
         return;
     }
-    removeItem(info);
+    Logger::Info(QString("SQL - remove Spkid %1 success.").arg(info.spk_id));
+    HttpSender *http_sender = HttpSender::GetInstance();
+    http_sender->removeFile(info.head_path);
+    if(QFile::exists(info.local_head_path)){
+        QFile::remove(info.local_head_path);
+    }
+    removeItem(item);
 }

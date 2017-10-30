@@ -4,9 +4,8 @@
 #include <QPainter>
 #include <QVBoxLayout>
 #include <QHBoxLayout>
-#include "soundsdata_db.h"
 
-RegistrantItem_widget::RegistrantItem_widget(RegistrantInfo *registrant_info,
+RegistrantItem_widget::RegistrantItem_widget(const RegistrantInfo &registrant_info,
                                              QWidget *parent) :
     QWidget(parent),
     ui(new Ui::RegistrantItem_widget)
@@ -15,21 +14,21 @@ RegistrantItem_widget::RegistrantItem_widget(RegistrantInfo *registrant_info,
     this->setFixedSize(537,94);
     QFont font;
     font.setFamily("Microsoft YaHei");
-    MaskLabel *registrantHeadLab = new MaskLabel(this);
-    registrantHeadLab->setFixedSize(68,68);
-    registrantHeadLab->setPixmap(QPixmap(registrant_info->head_path));
+    m_registrantHeadLab = new MaskLabel(this);
+    m_registrantHeadLab->setFixedSize(68,68);
+    m_registrantHeadLab->setPixmap(QPixmap(registrant_info.local_head_path));
     QVBoxLayout *first_layout = new QVBoxLayout;
     first_layout->addStretch(1);
-    first_layout->addWidget(registrantHeadLab);
+    first_layout->addWidget(m_registrantHeadLab);
     first_layout->addStretch(1);
 
     QLabel *registrantNameLab = new QLabel(this);
-    registrantNameLab->setText(registrant_info->name);
+    registrantNameLab->setText(registrant_info.name);
     registrantNameLab->setFont(font);
     registrantNameLab->setStyleSheet("* {color: #FFFFFF; font-size: 17px;}");
 
     QLabel *registrantRegistrationTimeLab = new QLabel(this);
-    registrantRegistrationTimeLab->setText(registrant_info->registration_time.toString("yyyy-MM-dd hh:mm:ss"));
+    registrantRegistrationTimeLab->setText(registrant_info.registration_time.toString("yyyy-MM-dd hh:mm:ss"));
     registrantRegistrationTimeLab->setFont(font);
     registrantRegistrationTimeLab->setStyleSheet("* {color: #FFFFFF; font-size: 14px;}");
     QVBoxLayout *second_layout = new QVBoxLayout;
@@ -76,5 +75,10 @@ void RegistrantItem_widget::paintEvent(QPaintEvent *e)
 
 void RegistrantItem_widget::removeRegistrantBtn_clicked()
 {
-    emit removeRegistrant(m_registrant_info);
+    emit removeRegistrant();
+}
+
+void RegistrantItem_widget::updateHeadImg()
+{
+    m_registrantHeadLab->setPixmap(QPixmap(m_registrant_info.local_head_path));
 }
