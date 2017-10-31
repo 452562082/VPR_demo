@@ -81,16 +81,16 @@ void Logger::log(LogType type,const QString& str)
     QString nowDateTimeStr = QDateTime::currentDateTime().toString("yyyy-MM-dd HH:mm:ss");
     switch (type) {
     case LogType::Info:
-        logStr += nowDateTimeStr + + " Info: " + str + "\r\n";
+        logStr += nowDateTimeStr + " Info: " + str + "\r\n";
         break;
     case LogType::Question:
-        logStr += nowDateTimeStr + + " Question: " + str + "\r\n";
+        logStr += nowDateTimeStr + " Question: " + str + "\r\n";
         break;
     case LogType::Warning:
-        logStr += nowDateTimeStr + + " Warning: " + str + "\r\n";
+        logStr += nowDateTimeStr + " Warning: " + str + "\r\n";
         break;
     case LogType::Error:
-        logStr += nowDateTimeStr + + " Error: " + str + "\r\n";
+        logStr += nowDateTimeStr + " Error: " + str + "\r\n";
         break;
     default:
         break;
