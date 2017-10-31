@@ -118,7 +118,7 @@ bool RPC_Kvp_Tool::KvpInsertNode(int32_t &ret, const char* node_name)
             return false;
         }
         ret = KvpInsertNodeFunc(node_name);
-        if(!ret){
+        if(ret == 0){
             Logger::Info("RPC - KvpInsertNode success.");
         }else{
             Logger::Error("RPC - KvpInsertNode failed.");
@@ -214,11 +214,7 @@ bool RPC_Kvp_Tool::KvpRegisterSpeakerByStream(_Rpc_ModelInfo* &ret, int16_t* utt
             return false;
         }
         ret = KvpRegisterSpeakerByStreamFunc(utt,utt_size,vp_node,vp_dir,spk_id);
-        if(ret == 0){
-            Logger::Info("RPC - KvpRegisterSpeakerByStream success.");
-        }else{
-            Logger::Error("RPC - KvpRegisterSpeakerByStream failed.");
-        }
+        Logger::Info("RPC - KvpRegisterSpeakerByStream success.");
         return true;
     }catch(std::exception ex)
     {
@@ -272,11 +268,7 @@ bool RPC_Kvp_Tool::KvpIdentifyTopSpeakerByStream(_Rpc_TopSpeakerInfo* &ret, int1
             return false;
         }
         ret = KvpIdentifyTopSpeakerByStreamFunc(utt,utt_size,vp_node_arr,vp_node_arr_size,node_num,top_n,utt_type);
-        if(ret == 0){
-            Logger::Info("RPC - KvpIdentifyTopSpeakerByStream success.");
-        }else{
-            Logger::Error("RPC - KvpIdentifyTopSpeakerByStream failed.");
-        }
+        Logger::Info("RPC - KvpIdentifyTopSpeakerByStream success.");
         return true;
     }catch(std::exception ex)
     {

@@ -9,7 +9,7 @@
 class ConfigParser
 {
 public:
-    static ConfigSet(){
+    static void ConfigSet(){
         QSettings configParser("config.ini",QSettings::IniFormat);
         //读取Database配置
         SoundsData_db *db = SoundsData_db::GetInstance();
