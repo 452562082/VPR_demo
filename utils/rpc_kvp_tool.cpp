@@ -215,6 +215,7 @@ bool RPC_Kvp_Tool::KvpRegisterSpeakerByStream(_Rpc_ModelInfo* &ret, int16_t* utt
         }
         ret = KvpRegisterSpeakerByStreamFunc(utt,utt_size,vp_node,vp_dir,spk_id);
         Logger::Info("RPC - KvpRegisterSpeakerByStream success.");
+        Logger::Info(QString("RPC - KvpRegisterSpeakerByStream info - ErrCode:%1,ErrMsg:%2").arg(QString::number(ret->ErrCode)).arg(ret->ErrMsg));
         return true;
     }catch(std::exception ex)
     {
@@ -269,6 +270,7 @@ bool RPC_Kvp_Tool::KvpIdentifyTopSpeakerByStream(_Rpc_TopSpeakerInfo* &ret, int1
         }
         ret = KvpIdentifyTopSpeakerByStreamFunc(utt,utt_size,vp_node_arr,vp_node_arr_size,node_num,top_n,utt_type);
         Logger::Info("RPC - KvpIdentifyTopSpeakerByStream success.");
+        Logger::Info(QString("RPC - KvpIdentifyTopSpeakerByStream info - ErrCode:%1,ErrMsg:%2").arg(QString::number(ret->ErrCode)).arg(ret->ErrMsg));
         return true;
     }catch(std::exception ex)
     {
