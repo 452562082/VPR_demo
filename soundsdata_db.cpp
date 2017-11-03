@@ -166,7 +166,7 @@ bool SoundsData_db::open()
     m_database.setUserName(username);
     m_database.setPassword(password);
     if(!m_database.open()){
-        Logger::Error(QString("SQL - open error - %!").arg(m_database.lastError().text()));
+        Logger::Error(QString("SQL - open error - %1").arg(m_database.lastError().text()));
         m_last_error = Error::DB_OPEN_ERROR;
         m_is_open = false;
         return false;
@@ -175,7 +175,7 @@ bool SoundsData_db::open()
     close();
     m_database.setDatabaseName(databaseName);
     if(!m_database.open()){
-        Logger::Error(QString("SQL - open error - %!").arg(m_database.lastError().text()));
+        Logger::Error(QString("SQL - open error - %1").arg(m_database.lastError().text()));
         m_last_error = Error::DB_OPEN_ERROR;
         m_is_open = false;
         return false;

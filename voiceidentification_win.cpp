@@ -10,6 +10,7 @@
 #include <QVBoxLayout>
 #include "masklabel.h"
 #include "utils/httpsender.h"
+#include "utils/logger.h"
 
 namespace{
     const char* vp_node = "Test_RPC";
@@ -171,8 +172,10 @@ void VoiceIdentification_win::record_timeout(QByteArray buf,int len)
     RPC_Kvp_Tool *rpc_tool = RPC_Kvp_Tool::GetInstance();
     _Rpc_TopSpeakerInfo *ret = nullptr;
     rpc_tool->KvpIdentifyTopSpeakerByStream(ret, (short*)buf.data(), len, &vp_node,1,1, 1, 0);
-    if(ret != nullptr && ret->ErrCode == 0 && ret->Top != 0){
+    if(ret != nullptr){
         m_error_code = ret->ErrCode;
+    }
+    if(ret != nullptr && ret->ErrCode == 0 && ret->Top != 0){
         SoundsData_db *db = SoundsData_db::GetInstance();
         RegistrantInfo registrant_info;
         if(ret->Scores != nullptr){
@@ -183,6 +186,7 @@ void VoiceIdentification_win::record_timeout(QByteArray buf,int len)
                     max_score_index = i;
                 }
             }
+            Logger::Info(QString("RPC - KvpIdentifyTopSpeakerByStream Max score Spkid = %1").arg(ret->Scores[max_score_index]->Spkid));
             db->GetRegistrantInfoBySpkId(ret->Scores[max_score_index]->Spkid, registrant_info);
         }
 
@@ -205,7 +209,6 @@ void VoiceIdentification_win::record_timeout(QByteArray buf,int len)
         m_identifyInfoLab->setText(registrant_info.name);
         rpc_tool->Delete_Rpc_TopSpeakerInfo(ret);
     }else{
-        m_error_code = ret->ErrCode;
         m_identifyInfoLab->setText("识别失败");
     }
 }
