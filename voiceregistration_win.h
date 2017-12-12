@@ -44,7 +44,7 @@ signals:
 
 private slots:
     void update_pcmWave(int);
-    void record_timeout(QByteArray,int);
+    void record_timeout(QByteArray);
     void returnBtn_clicked();
     void registrantHeadLab_clicked();
     void registerBtn_clicked();

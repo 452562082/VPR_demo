@@ -13,11 +13,11 @@ class AudioTool:public QObject
 {
     Q_OBJECT
 
-    enum class AudioToolStatus {
-        Freetime,
-        OnRecording,
-        OnPlay
-    };
+//    enum class AudioToolStatus {
+//        Freetime,
+//        OnRecording,
+//        OnPlay
+//    };
 public:
     AudioTool(QObject *parant = 0);
     ~AudioTool();
@@ -25,8 +25,12 @@ public:
     /// @brief 获取当前设备支持音频编码格式
     static QStringList GetSupportedCodecs();
     /// @brief 录音
+    bool record();
+    /// @brief 定时录音
     /// @param timer_msec 限制定时录音
-    void record(int timer_msec = -1);
+    bool timing_record(int timing_sec);
+    /// @brief 播放
+    bool play();
 
     void setSampleRate(int sampleRate);
     void setChannelCount(int channelCount);
@@ -36,29 +40,26 @@ public:
     void setSampleType(QAudioFormat::SampleType sampleType);
 private:
     bool initAudioFormat();
-    /// @brief 开始录音
-    bool startRecord(int timer_msec);
-    /// @brief 停止录音
-    void stopRecord();
-    /// @brief 开始播放
-    bool startPlay();
-    /// @brief 停止播放
-    void stopPlay();
 
 private:
-//    static AudioTool* m_instance;
-    AudioToolStatus m_audioStatus;//当前状态
+//    AudioToolStatus m_audioStatus;//当前状态
     QAudioFormat m_audioFormat;
     QIODevice* m_inputDevSound;//输入设备数据流
     QIODevice* m_outputDevSound;//输出设备数据流
     QAudioInput* m_audioInput;
     QAudioOutput* m_audioOutput;
-    QTimer *m_audioInput_timer;
+//    QTimer *m_audioInput_timer;
     QByteArray m_buffer_input;//缓冲录音数据
+    QFile m_file;
+    qint64 m_dataLengthRecord;
+//    QByteArray m_stream_buf;
+//    int m_record_cycle_sec;
 
 signals:
     void recordInput_updateAverageVolume(int);
-    void record_timeout(QByteArray buf, int len);
+    void recordInput_cycleData(QByteArray buf);
+//    void recordInput_recordCycleEnd(QByteArray buf);
+    void record_timeout(QByteArray buf);
 
 private slots:
     void OnAudioInputRead();

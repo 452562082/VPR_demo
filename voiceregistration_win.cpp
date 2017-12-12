@@ -72,7 +72,8 @@ VoiceRegistration_win::VoiceRegistration_win(QWidget *parent) :
     bottom_second_layout->addStretch(1);
     //创建声纹波形显示控件
     m_PCMWaveform_widget = new PCMWaveform_widget;
-    m_PCMWaveform_widget->setFixedSize(456,157);
+//    m_PCMWaveform_widget->setFixedSize(456,157);
+    m_PCMWaveform_widget->setFixedSize(600,300);
     QHBoxLayout *bottom_third_layout = new QHBoxLayout;
     bottom_third_layout->addStretch(1);
     bottom_third_layout->addWidget(m_PCMWaveform_widget);
@@ -126,7 +127,7 @@ VoiceRegistration_win::VoiceRegistration_win(QWidget *parent) :
     this->setLayout(main_layout);
 
     connect(m_audio,SIGNAL(recordInput_updateAverageVolume(int)),this,SLOT(update_pcmWave(int)));
-    connect(m_audio,SIGNAL(record_timeout(QByteArray,int)),this,SLOT(record_timeout(QByteArray,int)));
+    connect(m_audio,SIGNAL(record_timeout(QByteArray)),this,SLOT(record_timeout(QByteArray)));
     connect(m_returnBtn,SIGNAL(clicked()),this,SLOT(returnBtn_clicked()));
     connect(m_registrantHeadLab,SIGNAL(clicked()),this,SLOT(registrantHeadLab_clicked()));
     connect(m_registerBtn,SIGNAL(clicked()),this,SLOT(registerBtn_clicked()));
@@ -174,14 +175,15 @@ void VoiceRegistration_win::registerBtn_clicked()
         return;
     }
     m_buf_name = m_registrantNameEdit->text();
-    m_audio->record(20000);
+    int timing_sec = 5;
+    m_audio->timing_record(timing_sec);
     if(m_countDownTimer == nullptr){
         m_countDownTimer = new QTimer(this);
         connect(m_countDownTimer,SIGNAL(timeout()),this,SLOT(updateCountDownLab()));
     }
-    m_countDownLab->setText("20");
+    m_countDownLab->setText(QString::number(timing_sec));
     m_countDownLab->show();
-    m_cur_countDownNum = 20;
+    m_cur_countDownNum = timing_sec;
     m_countDownTimer->start(1000);
 }
 
@@ -190,14 +192,14 @@ void VoiceRegistration_win::update_pcmWave(int volume)
     m_PCMWaveform_widget->UpdateForm(volume);
 }
 
-void VoiceRegistration_win::record_timeout(QByteArray buf,int len)
+void VoiceRegistration_win::record_timeout(QByteArray buf)
 {
     QCryptographicHash md5(QCryptographicHash::Md5);
     md5.addData(buf);
     QString spk_id = md5.result().toHex();
     RPC_Kvp_Tool *rpc_tool = RPC_Kvp_Tool::GetInstance();
     _Rpc_ModelInfo *ret = nullptr;
-    rpc_tool->KvpRegisterSpeakerByStream(ret, (short*)buf.data(), len , vp_node, "/tmp/asv/", spk_id.toStdString().c_str());
+    rpc_tool->KvpRegisterSpeakerByStream(ret, (short*)buf.data(), buf.size()/2 , vp_node, "/tmp/asv/", spk_id.toStdString().c_str());
     if(ret == nullptr){
         return;
     }

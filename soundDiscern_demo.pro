@@ -28,7 +28,10 @@ SOURCES += main.cpp\
     utils/qftp.cpp \
     utils/qurlinfo.cpp \
     utils/logger.cpp \
-    utils/httpsender.cpp
+    utils/httpsender.cpp \
+    utils/xvpr_tool.cpp \
+    utils/xbusiness_aid.c \
+    utils/xbusiness_vad.c
 
 HEADERS  += \
     soundsdata_db.h \
@@ -48,7 +51,10 @@ HEADERS  += \
     utils/qftp.h \
     utils/qurlinfo.h \
     utils/logger.h \
-    utils/httpsender.h
+    utils/httpsender.h \
+    utils/xvpr_tool.h \
+    utils/xbusiness_vpr.h \
+    utils/xbusiness_vpr.h
 
 FORMS    += \
     pcmwaveform_widget.ui \
@@ -61,5 +67,8 @@ FORMS    += \
 
 RESOURCES += \
     registrants.qrc
+
+#LIBS += -L./libs/ -lxvpr \
+#        ./libs/xvpr.dll
 
 

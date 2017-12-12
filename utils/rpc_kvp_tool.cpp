@@ -70,7 +70,7 @@ bool RPC_Kvp_Tool::KvpServiceClient_Open(const char* ip,int port)
         return true;
     }catch(std::exception ex)
     {
-        Logger::Error(QString("RPC - KvpServiceClient_Open exception - ").arg(ex.what()));
+        Logger::Error(QString("RPC - KvpServiceClient_Open exception - %1").arg(ex.what()));
         return false;
     }
 }
@@ -94,7 +94,7 @@ bool RPC_Kvp_Tool::KvpServiceClient_close()
         return true;
     }catch(std::exception ex)
     {
-        Logger::Error(QString("RPC - KvpServiceClient_close exception - ").arg(ex.what()));
+        Logger::Error(QString("RPC - KvpServiceClient_close exception - %1").arg(ex.what()));
         return false;
     }
 }
@@ -126,7 +126,7 @@ bool RPC_Kvp_Tool::KvpInsertNode(int32_t &ret, const char* node_name)
         return true;
     }catch(std::exception ex)
     {
-        Logger::Error(QString("RPC - KvpInsertNode exception - ").arg(ex.what()));
+        Logger::Error(QString("RPC - KvpInsertNode exception - %1").arg(ex.what()));
         return false;
     }
 }
@@ -158,7 +158,7 @@ bool RPC_Kvp_Tool::KvpDeleteNode(int32_t &ret, const char* node_name)
         return true;
     }catch(std::exception ex)
     {
-        Logger::Error(QString("RPC - KvpDeleteNode exception - ").arg(ex.what()));
+        Logger::Error(QString("RPC - KvpDeleteNode exception - %1").arg(ex.what()));
         return false;
     }
 }
@@ -190,7 +190,7 @@ bool RPC_Kvp_Tool::KvpModelRemoveBySpkid(int32_t &ret, const char* vp_node, cons
         return true;
     }catch(std::exception ex)
     {
-        Logger::Error(QString("RPC - KvpModelRemoveBySpkid exception - ").arg(ex.what()));
+        Logger::Error(QString("RPC - KvpModelRemoveBySpkid exception - %1").arg(ex.what()));
         return false;
     }
 }
@@ -219,7 +219,7 @@ bool RPC_Kvp_Tool::KvpRegisterSpeakerByStream(_Rpc_ModelInfo* &ret, int16_t* utt
         return true;
     }catch(std::exception ex)
     {
-        Logger::Error(QString("RPC - KvpRegisterSpeakerByStream exception - ").arg(ex.what()));
+        Logger::Error(QString("RPC - KvpRegisterSpeakerByStream exception - %1").arg(ex.what()));
         return false;
     }
 }
@@ -246,7 +246,7 @@ void RPC_Kvp_Tool::Delete_Rpc_ModelInfo(_Rpc_ModelInfo* ptr)
         Logger::Info("RPC - Delete_Rpc_ModelInfo success.");
     }catch(std::exception ex)
     {
-        Logger::Error(QString("RPC - Delete_Rpc_ModelInfo exception - ").arg(ex.what()));
+        Logger::Error(QString("RPC - Delete_Rpc_ModelInfo exception - %1").arg(ex.what()));
     }
 }
 
@@ -274,7 +274,7 @@ bool RPC_Kvp_Tool::KvpIdentifyTopSpeakerByStream(_Rpc_TopSpeakerInfo* &ret, int1
         return true;
     }catch(std::exception ex)
     {
-        Logger::Error(QString("RPC - KvpIdentifyTopSpeakerByStream exception - ").arg(ex.what()));
+        Logger::Error(QString("RPC - KvpIdentifyTopSpeakerByStream exception - %1").arg(ex.what()));
         return false;
     }
 }
@@ -301,7 +301,7 @@ void RPC_Kvp_Tool::Delete_Rpc_TopSpeakerInfo(_Rpc_TopSpeakerInfo* ptr)
         Logger::Info("RPC - Delete_Rpc_TopSpeakerInfo success.");
     }catch(std::exception ex)
     {
-        Logger::Error(QString("RPC - Delete_Rpc_TopSpeakerInfo exception - ").arg(ex.what()));
+        Logger::Error(QString("RPC - Delete_Rpc_TopSpeakerInfo exception - %1").arg(ex.what()));
     }
 }
 
@@ -329,7 +329,7 @@ bool RPC_Kvp_Tool::KvpGetFingerprint(char* fingerprint)
         return true;
     }catch(std::exception ex)
     {
-        Logger::Error(QString("RPC - KvpGetFingerprint exception - ").arg(ex.what()));
+        Logger::Error(QString("RPC - KvpGetFingerprint exception - %1").arg(ex.what()));
         return false;
     }
 }
@@ -357,7 +357,7 @@ bool RPC_Kvp_Tool::KvpIsLicenceValid()
         Logger::Info("RPC - KvpIsLicenceValid success.");
     }catch(std::exception ex)
     {
-        Logger::Error(QString("RPC - KvpIsLicenceValid exception - ").arg(ex.what()));
+        Logger::Error(QString("RPC - KvpIsLicenceValid exception - %1").arg(ex.what()));
     }
     return flag;
 }
@@ -385,7 +385,7 @@ bool RPC_Kvp_Tool::KvpGetLicenceInfo(_Rpc_LicenceInfo* &ret)
         return true;
     }catch(std::exception ex)
     {
-        Logger::Error(QString("RPC - KvpGetLicenceInfo exception - ").arg(ex.what()));
+        Logger::Error(QString("RPC - KvpGetLicenceInfo exception - %1").arg(ex.what()));
         return false;
     }
 }
@@ -412,7 +412,7 @@ void RPC_Kvp_Tool::Delete_Rpc_LicenceInfo(_Rpc_LicenceInfo* ptr)
         Logger::Info("RPC - Delete_Rpc_LicenceInfo success.");
     }catch(std::exception ex)
     {
-        Logger::Error(QString("RPC - Delete_Rpc_LicenceInfo exception - ").arg(ex.what()));
+        Logger::Error(QString("RPC - Delete_Rpc_LicenceInfo exception - %1").arg(ex.what()));
     }
 }
 
@@ -443,7 +443,7 @@ bool RPC_Kvp_Tool::KvpSetLicence(int32_t &ret,const char* licence)
         return true;
     }catch(std::exception ex)
     {
-        Logger::Error(QString("RPC - KvpSetLicence exception - ").arg(ex.what()));
+        Logger::Error(QString("RPC - KvpSetLicence exception - %1").arg(ex.what()));
         return false;
     }
 }

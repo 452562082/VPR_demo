@@ -83,14 +83,13 @@ namespace{
         return nFileLen;
     }
     const int BufferSize = 4096;
+    const int max_speaking_sec = 10;
 }
 
 AudioTool::AudioTool(QObject *parant) : QObject(parant),
-    m_audioStatus(AudioToolStatus::Freetime),
     m_inputDevSound(nullptr),
     m_audioInput(nullptr),
-    m_audioOutput(nullptr),
-    m_audioInput_timer(nullptr)
+    m_audioOutput(nullptr)
 {
     // 设置音频文件格式;
     m_audioFormat.setSampleRate(8000);
@@ -115,10 +114,6 @@ AudioTool::~AudioTool()
         delete m_audioOutput;
         m_audioOutput = nullptr;
     }
-    if(m_audioInput_timer != nullptr){
-        delete m_audioInput_timer;
-        m_audioInput_timer = nullptr;
-    }
 }
 
 QStringList AudioTool::GetSupportedCodecs()
@@ -127,95 +122,20 @@ QStringList AudioTool::GetSupportedCodecs()
     return AudioDeviceInfo.supportedCodecs();
 }
 
-void AudioTool::record(int timer_msec)
+bool AudioTool::record()
 {
-    switch(m_audioStatus){
-    case AudioToolStatus::Freetime:
-        startRecord(timer_msec);
-        break;
-    case AudioToolStatus::OnRecording:
-        stopRecord();
-        break;
-    default:
-        Logger::Warning("AUDIO - audio is playing");
-        break;
-    }
-}
-
-bool AudioTool::startRecord(int timer_msec)
-{
-    if(m_audioStatus != AudioToolStatus::Freetime) {
-        Logger::Error("AUDIO - audio is not free");
-        return false;
-    }
-
-    if(!initAudioFormat()){
-        return false;
-    }
-
-    m_audioStatus = AudioToolStatus::OnRecording;
-
-    m_buffer_input.clear();
-    m_audioInput = new QAudioInput(m_audioFormat, this);
-    m_audioInput->setVolume(1.0);
-    if(timer_msec > 0){
-        if(m_audioInput_timer != nullptr){
-            delete m_audioInput_timer;
+    if(m_audioInput == nullptr){
+        if(!initAudioFormat()){
+            return false;
         }
-        m_audioInput_timer = new QTimer;
-        connect(m_audioInput_timer,SIGNAL(timeout()), this, SLOT(input_timeout_slot()));
-        m_audioInput_timer->start(timer_msec);
-    }
-    m_inputDevSound = m_audioInput->start();
-    connect(m_inputDevSound,SIGNAL(readyRead()),this,SLOT(OnAudioInputRead()));
 
-    return true;
-}
+        m_buffer_input.clear();
+        m_audioInput = new QAudioInput(m_audioFormat, this);
+        m_audioInput->setVolume(1.0);
 
-void AudioTool::input_timeout_slot()
-{
-    stopRecord();
-
-    int len = m_buffer_input.length();
-    Q_ASSERT(m_audioFormat.sampleSize() % 8 == 0);
-    const int channelBytes = m_audioFormat.sampleSize() / 8;
-    const int sampleBytes = m_audioFormat.channelCount() * channelBytes;
-    Q_ASSERT(len % sampleBytes == 0);
-    const int numSamples = len / sampleBytes;
-    emit record_timeout(m_buffer_input, numSamples);
-}
-
-void AudioTool::OnAudioInputRead()
-{
-    if(!m_audioInput){
-        return;
-    }
-
-    qint64 len = m_audioInput->bytesReady();
-    if(len > BufferSize){
-        len = BufferSize;
-    }
-
-    QByteArray _Buffer(BufferSize, 0);
-    qint64 l = m_inputDevSound->read(_Buffer.data(), len);
-
-    if(l > 0) {
-        m_buffer_input.append(_Buffer.constData(), l);
-        short* resultingData = (short*)_Buffer.data();
-        int total_value = 0;
-        for(int i = 0;i < len;++i){
-            total_value += resultingData[i];
-        }
-        int average_value = total_value / len;
-        emit recordInput_updateAverageVolume(average_value);
-    }
-}
-
-void AudioTool::stopRecord()
-{
-    if(m_audioStatus == AudioToolStatus::OnRecording)
-    {
-        m_audioStatus = AudioToolStatus::Freetime;
+        m_inputDevSound = m_audioInput->start();
+        connect(m_inputDevSound,SIGNAL(readyRead()),this,SLOT(OnAudioInputRead()));
+    }else{
         if(m_audioInput != nullptr){
             m_audioInput->stop();
             delete m_audioInput;
@@ -226,34 +146,108 @@ void AudioTool::stopRecord()
             delete m_inputDevSound;
             m_inputDevSound = nullptr;
         }
-        if(m_audioInput_timer != nullptr){
-            m_audioInput_timer->stop();
-            delete m_audioInput_timer;
-            m_audioInput_timer = nullptr;
-        }
-        /*QString rawFilename = m_operateFile.fileName();
-        QString wavFilename = QString(rawFilename).replace(rawFilename.indexOf('.'),rawFilename.length() - rawFilename.indexOf('.'),".wav");
-        RawFile2WavFile(rawFilename, wavFilename);
-        QFile::remove(rawFilename);*/
     }
+    return true;
 }
 
-bool AudioTool::startPlay()
+bool AudioTool::timing_record(int timing_sec)
 {
-    if(m_audioStatus != AudioToolStatus::Freetime) {
-        Logger::Error("AUDIO - audio is not free");
-        return false;
-    }
-
-    m_audioStatus = AudioToolStatus::OnPlay;
-
     if(!initAudioFormat()){
         return false;
     }
 
-    m_audioOutput = new QAudioOutput(m_audioFormat, this);
-    m_outputDevSound = m_audioOutput->start();
-    connect(m_outputDevSound,SIGNAL(readyRead()),this,SLOT(OnAudioOutputRead()));
+    m_buffer_input.clear();
+    m_audioInput = new QAudioInput(m_audioFormat, this);
+    m_audioInput->setVolume(1.0);
+    if(timing_sec > 0){
+        QTimer::singleShot(timing_sec * 1000,this,SLOT(input_timeout_slot()));
+    }
+    m_inputDevSound = m_audioInput->start();
+    connect(m_inputDevSound,SIGNAL(readyRead()),this,SLOT(OnAudioInputRead()));
+
+    return true;
+}
+
+void AudioTool::input_timeout_slot()
+{
+    if(m_audioInput != nullptr){
+        m_audioInput->stop();
+        delete m_audioInput;
+        m_audioInput = nullptr;
+    }
+    if(m_inputDevSound != nullptr){
+        m_inputDevSound->close();
+        delete m_inputDevSound;
+        m_inputDevSound = nullptr;
+    }
+
+//    int len = m_buffer_input.length();
+//    Q_ASSERT(m_audioFormat.sampleSize() % 8 == 0);
+//    const int channelBytes = m_audioFormat.sampleSize() / 8;
+//    const int sampleBytes = m_audioFormat.channelCount() * channelBytes;
+//    Q_ASSERT(len % sampleBytes == 0);
+//    const int numSamples = len / sampleBytes;
+    emit record_timeout(m_buffer_input);
+}
+
+void AudioTool::OnAudioInputRead()
+{
+    if(!m_audioInput){
+        return;
+    }
+
+    qint64 len = m_audioInput->bytesReady();
+//    if(len > BufferSize){
+//        len = BufferSize;
+//    }
+
+//    QByteArray _Buffer(BufferSize,0);
+//    qint64 l = m_inputDevSound->read(_Buffer.data(), len);
+//    QByteArray _data = _Buffer.left(l);
+    QByteArray buf = m_inputDevSound->read(len);
+
+    if(buf.size() > 0) {
+//        m_buffer_input.append(_data.constData(), l);
+//        short* resultingData = (short*)_Buffer.data();
+//        int total_value = 0;
+//        for(int i = 0;i < len;++i){
+//            total_value += resultingData[i];
+//        }
+        m_buffer_input.append(buf,buf.size());
+        short* _data = (short*)buf.constData();
+        int total_value = 0;
+        for(int i = 0;i < buf.size()/2;++i){
+            total_value += _data[i];
+        }
+
+        int average_value = total_value / (buf.size()/2);
+        emit recordInput_updateAverageVolume(average_value);
+        emit recordInput_cycleData(buf);
+    }
+}
+
+bool AudioTool::play()
+{
+    if(m_audioOutput == nullptr){
+        if(!initAudioFormat()){
+            return false;
+        }
+
+        m_audioOutput = new QAudioOutput(m_audioFormat, this);
+        m_outputDevSound = m_audioOutput->start();
+        connect(m_outputDevSound,SIGNAL(readyRead()),this,SLOT(OnAudioOutputRead()));
+    }else{
+        if(m_audioOutput != nullptr){
+            m_audioOutput->stop();
+            delete m_audioOutput;
+            m_audioOutput = nullptr;
+        }
+        if(m_outputDevSound != nullptr){
+            m_outputDevSound->close();
+            delete m_outputDevSound;
+            m_outputDevSound = nullptr;
+        }
+    }
     return true;
 }
 
@@ -275,23 +269,6 @@ void AudioTool::OnAudioOutputRead()
 //        int average_value = total_value / len;
 //        m_record_callback(average_value);
 //    }
-}
-
-void AudioTool::stopPlay()
-{
-    if(m_audioStatus == AudioToolStatus::OnPlay){
-        m_audioStatus = AudioToolStatus::Freetime;
-        if(m_audioOutput != nullptr){
-            m_audioOutput->stop();
-            delete m_audioOutput;
-            m_audioOutput = nullptr;
-        }
-        if(m_outputDevSound != nullptr){
-            m_outputDevSound->close();
-            delete m_outputDevSound;
-            m_outputDevSound = nullptr;
-        }
-    }
 }
 
 void AudioTool::setSampleRate(int sampleRate)

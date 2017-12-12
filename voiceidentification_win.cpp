@@ -18,7 +18,7 @@ namespace{
 
 VoiceIdentification_win::VoiceIdentification_win(QWidget *parent) :
     QWidget(parent),
-    m_countDownTimer(nullptr),
+    m_xvad_handle(nullptr),
     ui(new Ui::VoiceIdentification_win)
 {
     ui->setupUi(this);
@@ -71,38 +71,39 @@ VoiceIdentification_win::VoiceIdentification_win(QWidget *parent) :
     bottom_second_layout->addStretch(1);
     //创建声纹波形显示控件
     m_PCMWaveform_widget = new PCMWaveform_widget(this);
-    m_PCMWaveform_widget->setFixedSize(456,157);
+//    m_PCMWaveform_widget->setFixedSize(456,157);
+    m_PCMWaveform_widget->setFixedSize(600,300);
     QHBoxLayout *bottom_third_layout = new QHBoxLayout;
     bottom_third_layout->addStretch(1);
     bottom_third_layout->addWidget(m_PCMWaveform_widget);
     bottom_third_layout->addStretch(1);
     //创建声纹识别按钮
-    m_identifyBtn = new QPushButton(this);
-    m_identifyBtn->setStyleSheet(QString("* {background-color: transparent;"
-                                 "border-radius: %1px;"
-                                 "border-image:url(:/images/record.png);"
-                                 "width: 184px;"
-                                 "height:184px;}"
-                                 "* :hover{border-image:url(:/images/record_hover.png);}").arg(m_identifyBtn->width()/2));
-    QHBoxLayout *bottom_fourth_layout = new QHBoxLayout;
-    bottom_fourth_layout->addStretch(1);
-    bottom_fourth_layout->addWidget(m_identifyBtn);
-    bottom_fourth_layout->addStretch(1);
-    QLabel *identifyLab = new QLabel("开始识别");
-    identifyLab->setFont(font);
-    identifyLab->setStyleSheet("* {color: #2b85e3; font-size: 20px;}");
-    QHBoxLayout *bottom_fifth_layout = new QHBoxLayout;
-    bottom_fifth_layout->addStretch(1);
-    bottom_fifth_layout->addWidget(identifyLab);
-    bottom_fifth_layout->addStretch(1);
+//    m_identifyBtn = new QPushButton(this);
+//    m_identifyBtn->setStyleSheet(QString("* {background-color: transparent;"
+//                                 "border-radius: %1px;"
+//                                 "border-image:url(:/images/record.png);"
+//                                 "width: 184px;"
+//                                 "height:184px;}"
+//                                 "* :hover{border-image:url(:/images/record_hover.png);}").arg(m_identifyBtn->width()/2));
+//    QHBoxLayout *bottom_fourth_layout = new QHBoxLayout;
+//    bottom_fourth_layout->addStretch(1);
+//    bottom_fourth_layout->addWidget(m_identifyBtn);
+//    bottom_fourth_layout->addStretch(1);
+//    QLabel *identifyLab = new QLabel("开始识别");
+//    identifyLab->setFont(font);
+//    identifyLab->setStyleSheet("* {color: #2b85e3; font-size: 20px;}");
+//    QHBoxLayout *bottom_fifth_layout = new QHBoxLayout;
+//    bottom_fifth_layout->addStretch(1);
+//    bottom_fifth_layout->addWidget(identifyLab);
+//    bottom_fifth_layout->addStretch(1);
     //创建倒计时显示控件
-    m_countDownLab = new QLabel(this);
-    m_countDownLab->setStyleSheet("* {color: #3ddcf6; font-size: 30px;}");
-    m_countDownLab->hide();
-    QHBoxLayout *bottom_sixth_layout = new QHBoxLayout;
-    bottom_sixth_layout->addStretch(1);
-    bottom_sixth_layout->addWidget(m_countDownLab);
-    bottom_sixth_layout->addStretch(1);
+//    m_countDownLab = new QLabel(this);
+//    m_countDownLab->setStyleSheet("* {color: #3ddcf6; font-size: 30px;}");
+//    m_countDownLab->hide();
+//    QHBoxLayout *bottom_sixth_layout = new QHBoxLayout;
+//    bottom_sixth_layout->addStretch(1);
+//    bottom_sixth_layout->addWidget(m_countDownLab);
+//    bottom_sixth_layout->addStretch(1);
 
     QVBoxLayout *bottom_layout = new QVBoxLayout;
     bottom_layout->addSpacing(40);
@@ -110,10 +111,10 @@ VoiceIdentification_win::VoiceIdentification_win(QWidget *parent) :
     bottom_layout->addSpacing(5);
     bottom_layout->addLayout(bottom_second_layout);
     bottom_layout->addLayout(bottom_third_layout);
-    bottom_layout->addLayout(bottom_fourth_layout);
-    bottom_layout->addLayout(bottom_fifth_layout);
-    bottom_layout->addSpacing(10);
-    bottom_layout->addLayout(bottom_sixth_layout);
+//    bottom_layout->addLayout(bottom_fourth_layout);
+//    bottom_layout->addLayout(bottom_fifth_layout);
+//    bottom_layout->addSpacing(10);
+//    bottom_layout->addLayout(bottom_sixth_layout);
     bottom_layout->addStretch(1);
 
     QVBoxLayout *main_layout = new QVBoxLayout;
@@ -124,10 +125,12 @@ VoiceIdentification_win::VoiceIdentification_win(QWidget *parent) :
     this->setLayout(main_layout);
 
     connect(m_audio,SIGNAL(recordInput_updateAverageVolume(int)),this,SLOT(update_pcmWave(int)));
-    connect(m_audio,SIGNAL(record_timeout(QByteArray,int)),this,SLOT(record_timeout(QByteArray,int)));
+//    connect(m_audio,SIGNAL(record_timeout(QByteArray,int)),this,SLOT(record_timeout(QByteArray,int)));
+    connect(m_audio,SIGNAL(recordInput_cycleData(QByteArray)),this,SLOT(record_cycleDataReceived(QByteArray)));
     connect(m_voiceRegistrationWin_showBtn,SIGNAL(clicked()),this,SLOT(voiceRegistrationWin_showBtn_clicked()));
     connect(m_voiceLibWin_showBtn,SIGNAL(clicked()),this,SLOT(voiceLibWin_showBtn_clicked()));
-    connect(m_identifyBtn, SIGNAL(clicked()), this, SLOT(identifyBtn_clicked()));
+//    connect(m_identifyBtn, SIGNAL(clicked()), this, SLOT(identifyBtn_clicked()));
+    switch_identificationStatus();
 }
 
 VoiceIdentification_win::~VoiceIdentification_win()
@@ -135,6 +138,9 @@ VoiceIdentification_win::~VoiceIdentification_win()
     if(m_audio != nullptr) {
         delete m_audio;
         m_audio = nullptr;
+    }
+    if(m_xvad_handle != nullptr) {
+        free(m_xvad_handle);
     }
     delete ui;
 }
@@ -147,19 +153,11 @@ void VoiceIdentification_win::paintEvent(QPaintEvent *e)
     painter.drawPixmap(0,0,width(),height(),QPixmap("://images/bg.png"));
 }
 
-void VoiceIdentification_win::identifyBtn_clicked()
+void VoiceIdentification_win::switch_identificationStatus()
 {
+    m_audio->record();
     m_registrantHeadLab->hide();
     m_identifyInfoLab->setText("");
-    m_audio->record(15000);
-    if(m_countDownTimer == nullptr){
-        m_countDownTimer = new QTimer(this);
-        connect(m_countDownTimer,SIGNAL(timeout()),this,SLOT(updateCountDownLab()));
-    }
-    m_countDownLab->setText("15");
-    m_countDownLab->show();
-    m_cur_countDownNum = 15;
-    m_countDownTimer->start(1000);
 }
 
 void VoiceIdentification_win::update_pcmWave(int volume)
@@ -167,14 +165,31 @@ void VoiceIdentification_win::update_pcmWave(int volume)
     m_PCMWaveform_widget->UpdateForm(volume);
 }
 
-void VoiceIdentification_win::record_timeout(QByteArray buf,int len)
+void VoiceIdentification_win::record_cycleDataReceived(QByteArray buf)
+{
+    if(m_xvad_handle == nullptr){
+        m_xvad_handle = xvpr_vad_create_vad(8000,10);
+    }
+
+    if(xvpr_vad_is_speaking(m_xvad_handle,(short*)buf.constData(),buf.size()/2) && !m_stream_buf.isEmpty()){
+        if(m_stream_buf.size() > 8000 * 2){
+            identify(m_stream_buf);
+        }
+        m_stream_buf.clear();
+    }else{
+        m_stream_buf.append(buf);
+    }
+}
+
+void VoiceIdentification_win::identify(QByteArray buf)
 {
     RPC_Kvp_Tool *rpc_tool = RPC_Kvp_Tool::GetInstance();
     _Rpc_TopSpeakerInfo *ret = nullptr;
-    rpc_tool->KvpIdentifyTopSpeakerByStream(ret, (short*)buf.data(), len, &vp_node,1,1, 1, 0);
+    rpc_tool->KvpIdentifyTopSpeakerByStream(ret, (short*)buf.data(), buf.size()/2, &vp_node,1,1, 1, 0);
     if(ret != nullptr){
         m_error_code = ret->ErrCode;
     }
+
     if(ret != nullptr && ret->ErrCode == 0 && ret->Top != 0){
         SoundsData_db *db = SoundsData_db::GetInstance();
         RegistrantInfo registrant_info;
@@ -209,9 +224,55 @@ void VoiceIdentification_win::record_timeout(QByteArray buf,int len)
         m_identifyInfoLab->setText(registrant_info.name);
         rpc_tool->Delete_Rpc_TopSpeakerInfo(ret);
     }else{
+        m_registrantHeadLab->hide();
         m_identifyInfoLab->setText("识别失败");
     }
 }
+//void VoiceIdentification_win::record_timeout(QByteArray buf,int len)
+//{
+//    RPC_Kvp_Tool *rpc_tool = RPC_Kvp_Tool::GetInstance();
+//    _Rpc_TopSpeakerInfo *ret = nullptr;
+//    rpc_tool->KvpIdentifyTopSpeakerByStream(ret, (short*)buf.data(), len, &vp_node,1,1, 1, 0);
+//    if(ret != nullptr){
+//        m_error_code = ret->ErrCode;
+//    }
+//    if(ret != nullptr && ret->ErrCode == 0 && ret->Top != 0){
+//        SoundsData_db *db = SoundsData_db::GetInstance();
+//        RegistrantInfo registrant_info;
+//        if(ret->Scores != nullptr){
+//            //取最高得分
+//            int max_score_index = 0;
+//            for(int i = 0;i < ret->Scores_size;++i){
+//                if(ret->Scores[i]->Score > ret->Scores[max_score_index]->Score){
+//                    max_score_index = i;
+//                }
+//            }
+//            Logger::Info(QString("RPC - KvpIdentifyTopSpeakerByStream Max score Spkid = %1").arg(ret->Scores[max_score_index]->Spkid));
+//            db->GetRegistrantInfoBySpkId(ret->Scores[max_score_index]->Spkid, registrant_info);
+//        }
+
+//        QString head_dir_name = QDir::currentPath() + "/headImages/";
+//        QDir head_dir;
+//        if(!head_dir.exists(head_dir_name)){
+//            head_dir.mkdir(head_dir_name);
+//        }
+//        QString local_head_path = head_dir_name + registrant_info.spk_id + registrant_info.head_path.right(registrant_info.head_path.length() - registrant_info.head_path.lastIndexOf('.'));
+//        m_local_head_path = local_head_path;
+//        if(!QFile::exists(local_head_path)){
+//            HttpSender *http_sender = HttpSender::GetInstance();
+//            http_sender->downloadFile(registrant_info.head_path,local_head_path);
+//            connect(http_sender,SIGNAL(finished()),this,SLOT(updateRegistantHeadLab()));
+//        }else{
+//            m_registrantHeadLab->show();
+//            m_registrantHeadLab->setPixmap(QPixmap(local_head_path));
+//        }
+
+//        m_identifyInfoLab->setText(registrant_info.name);
+//        rpc_tool->Delete_Rpc_TopSpeakerInfo(ret);
+//    }else{
+//        m_identifyInfoLab->setText("识别失败");
+//    }
+//}
 
 void VoiceIdentification_win::voiceRegistrationWin_showBtn_clicked()
 {
@@ -223,16 +284,16 @@ void VoiceIdentification_win::voiceLibWin_showBtn_clicked()
     emit switchToVoiceLibWin();
 }
 
-void VoiceIdentification_win::updateCountDownLab()
-{
-    m_cur_countDownNum--;
-    if(m_cur_countDownNum == 0){
-        m_countDownLab->hide();
-        m_countDownTimer->stop();
-    }else{
-        m_countDownLab->setText(QString::number(m_cur_countDownNum,10));
-    }
-}
+//void VoiceIdentification_win::updateCountDownLab()
+//{
+//    m_cur_countDownNum--;
+//    if(m_cur_countDownNum == 0){
+//        m_countDownLab->hide();
+//        m_countDownTimer->stop();
+//    }else{
+//        m_countDownLab->setText(QString::number(m_cur_countDownNum,10));
+//    }
+//}
 
 void VoiceIdentification_win::updateRegistantHeadLab()
 {

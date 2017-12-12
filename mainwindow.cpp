@@ -43,15 +43,18 @@ MainWindow::~MainWindow()
 void MainWindow::switchToVoiceIdentificationWin()
 {
     m_main_widget->setCurrentWidget(m_voiceIdentification_win);
+    m_voiceIdentification_win->switch_identificationStatus();
 }
 
 void MainWindow::switchToVoiceLibWin()
 {
     m_voiceLib_win->bindData();
     m_main_widget->setCurrentWidget(m_voiceLib_win);
+    m_voiceIdentification_win->switch_identificationStatus();
 }
 
 void MainWindow::switchToVoiceRegistrationWin()
 {
     m_main_widget->setCurrentWidget(m_voiceRegistration_win);
+    m_voiceIdentification_win->switch_identificationStatus();
 }

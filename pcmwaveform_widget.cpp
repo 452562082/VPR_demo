@@ -2,13 +2,17 @@
 #include "ui_pcmwaveform_widget.h"
 #include <QHBoxLayout>
 
+namespace {
+    const int peak_value = 5000;
+}
+
 PCMWaveform_widget::PCMWaveform_widget(QWidget *parent) :
     QWidget(parent),
     ui(new Ui::PCMWaveform_widget)
 {
     ui->setupUi(this);
-    m_max_size = 30;
-    m_max_value = 200;
+    m_max_size = 50;
+    m_max_value = peak_value + 50;//50为预留绘制间距
 
     m_splineSeries = new QSplineSeries();
     for (int i = 0; i < m_max_size;++i) {
@@ -45,10 +49,10 @@ PCMWaveform_widget::~PCMWaveform_widget()
 
 void PCMWaveform_widget::UpdateForm(int value)
 {
-    if(value > 200){
-        value = 200;
-    }else if(value < -200){
-        value = -200;
+    if(value > peak_value){
+        value = peak_value;
+    }else if(value < -1 * peak_value){
+        value = -1 * peak_value;
     }
 
     m_data << value;

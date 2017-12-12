@@ -116,7 +116,7 @@ bool SoundsData_db::GetRegistrantInfoBySpkId(const QString &spk_id, RegistrantIn
         ret.registration_time = sql_query.value("RegistrationTime").toDateTime();       
         break;
     }
-    Logger::Info(QString("SQL - SELECT FROM '%1' WHERE Spk_id = '%2' success.").arg(spk_id));
+    Logger::Info(QString("SQL - SELECT FROM '%1' WHERE Spk_id = '%2' success.").arg(tablename).arg(spk_id));
     m_last_error = Error::SUCCESS;
     return true;
 }
