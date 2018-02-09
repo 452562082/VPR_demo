@@ -9,6 +9,7 @@
 #include <QHBoxLayout>
 #include <QFileDialog>
 #include <QMessageBox>
+#include <QMenu>
 #include <QCryptographicHash>
 #include "masklabel.h"
 #include "utils/httpsender.h"
@@ -125,12 +126,15 @@ VoiceRegistration_win::VoiceRegistration_win(QWidget *parent) :
     main_layout->setStretchFactor(bottom_layout, 850);
 
     this->setLayout(main_layout);
+    m_rightMenu = new QMenu(this);
+    QAction *exitAction = m_rightMenu->addAction("退出");
 
     connect(m_audio,SIGNAL(recordInput_updateAverageVolume(int)),this,SLOT(update_pcmWave(int)));
     connect(m_audio,SIGNAL(record_timeout(QByteArray)),this,SLOT(record_timeout(QByteArray)));
     connect(m_returnBtn,SIGNAL(clicked()),this,SLOT(returnBtn_clicked()));
     connect(m_registrantHeadLab,SIGNAL(clicked()),this,SLOT(registrantHeadLab_clicked()));
     connect(m_registerBtn,SIGNAL(clicked()),this,SLOT(registerBtn_clicked()));
+    connect(exitAction, SIGNAL(triggered(bool)), this, SLOT(exitAction_triggered()));
 }
 
 VoiceRegistration_win::~VoiceRegistration_win()
@@ -155,6 +159,11 @@ void VoiceRegistration_win::paintEvent(QPaintEvent *e)
     painter.drawLine(m_registrantNameEdit->pos().x() - 30,m_registrantNameEdit->pos().y() + m_registrantNameEdit->height() + 4,m_registrantNameEdit->pos().x() + m_registrantNameEdit->width() + 30,m_registrantNameEdit->pos().y() + m_registrantNameEdit->height() + 4);
 }
 
+void VoiceRegistration_win::contextMenuEvent(QContextMenuEvent* e)
+{
+    m_rightMenu->exec(QCursor::pos());
+}
+
 void VoiceRegistration_win::registrantHeadLab_clicked()
 {
     QString filePath = QFileDialog::getOpenFileName(this, tr("打开图片"), ".", tr("图片类型(*.jpg *.png)"));
@@ -175,7 +184,7 @@ void VoiceRegistration_win::registerBtn_clicked()
         return;
     }
     m_buf_name = m_registrantNameEdit->text();
-    int timing_sec = 5;
+    int timing_sec = 10;
     m_audio->timing_record(timing_sec);
     if(m_countDownTimer == nullptr){
         m_countDownTimer = new QTimer(this);
@@ -231,4 +240,9 @@ void VoiceRegistration_win::updateCountDownLab()
     }else{
         m_countDownLab->setText(QString::number(m_cur_countDownNum,10));
     }
+}
+
+void VoiceRegistration_win::exitAction_triggered()
+{
+    emit exit();
 }

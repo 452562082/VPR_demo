@@ -131,7 +131,7 @@ bool AudioTool::record()
 
         m_buffer_input.clear();
         m_audioInput = new QAudioInput(m_audioFormat, this);
-        m_audioInput->setVolume(1.0);
+        m_audioInput->setVolume(1);
 
         m_inputDevSound = m_audioInput->start();
         connect(m_inputDevSound,SIGNAL(readyRead()),this,SLOT(OnAudioInputRead()));
@@ -158,7 +158,7 @@ bool AudioTool::timing_record(int timing_sec)
 
     m_buffer_input.clear();
     m_audioInput = new QAudioInput(m_audioFormat, this);
-    m_audioInput->setVolume(1.0);
+    m_audioInput->setVolume(1);
     if(timing_sec > 0){
         QTimer::singleShot(timing_sec * 1000,this,SLOT(input_timeout_slot()));
     }

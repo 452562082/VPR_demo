@@ -6,6 +6,7 @@
 #include <QHBoxLayout>
 #include <QVBoxLayout>
 #include <QScrollArea>
+#include <QMenu>
 #include "registrantitem_widget.h"
 
 VoiceLib_win::VoiceLib_win(QWidget *parent) :
@@ -53,8 +54,11 @@ VoiceLib_win::VoiceLib_win(QWidget *parent) :
     main_layout->setStretchFactor(top_layout, 50);
     main_layout->setStretchFactor(bottom_layout, 850);
     this->setLayout(main_layout);
+    m_rightMenu = new QMenu(this);
+    QAction *exitAction = m_rightMenu->addAction("退出");
 
     connect(m_returnBtn,SIGNAL(clicked()),this,SLOT(returnBtn_clicked()));
+    connect(exitAction, SIGNAL(triggered(bool)), this, SLOT(exitAction_triggered()));
 }
 
 VoiceLib_win::~VoiceLib_win()
@@ -70,6 +74,11 @@ void VoiceLib_win::paintEvent(QPaintEvent *e)
     painter.drawPixmap(0,0,width(),height(),QPixmap("://images/bg.png"));
 }
 
+void VoiceLib_win::contextMenuEvent(QContextMenuEvent* e)
+{
+    m_rightMenu->exec(QCursor::pos());
+}
+
 void VoiceLib_win::bindData()
 {
     m_voiceLibTable->bindData();
@@ -78,4 +87,9 @@ void VoiceLib_win::bindData()
 void VoiceLib_win::returnBtn_clicked()
 {
     emit switchToVoiceIdentificationWin();
+}
+
+void VoiceLib_win::exitAction_triggered()
+{
+    emit exit();
 }

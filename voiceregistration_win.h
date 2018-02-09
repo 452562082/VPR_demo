@@ -23,6 +23,7 @@ public:
 
 protected:
     void paintEvent(QPaintEvent *e);
+    void contextMenuEvent(QContextMenuEvent* e);
 
 private:
     Ui::VoiceRegistration_win *ui;
@@ -35,12 +36,14 @@ private:
     int m_cur_countDownNum;
     QTimer *m_countDownTimer;//倒计时计时器
     AudioTool *m_audio;//音频工具
+    QMenu *m_rightMenu;
 private:
     QString m_buf_name;
     QString m_buf_head_path;
 
 signals:
     void switchToVoiceIdentificationWin();
+    void exit();
 
 private slots:
     void update_pcmWave(int);
@@ -49,6 +52,7 @@ private slots:
     void registrantHeadLab_clicked();
     void registerBtn_clicked();
     void updateCountDownLab();
+    void exitAction_triggered();
 };
 
 #endif // VoiceRegistration_win_H

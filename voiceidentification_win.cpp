@@ -6,6 +6,7 @@
 #include <QPainter>
 #include <QCryptographicHash>
 #include <QDir>
+#include <QMenu>
 #include <QHBoxLayout>
 #include <QVBoxLayout>
 #include "masklabel.h"
@@ -123,6 +124,8 @@ VoiceIdentification_win::VoiceIdentification_win(QWidget *parent) :
     main_layout->setStretchFactor(top_layout, 50);
     main_layout->setStretchFactor(bottom_layout, 850);
     this->setLayout(main_layout);
+    m_rightMenu = new QMenu(this);
+    QAction *exitAction = m_rightMenu->addAction("退出");
 
     connect(m_audio,SIGNAL(recordInput_updateAverageVolume(int)),this,SLOT(update_pcmWave(int)));
 //    connect(m_audio,SIGNAL(record_timeout(QByteArray,int)),this,SLOT(record_timeout(QByteArray,int)));
@@ -130,6 +133,7 @@ VoiceIdentification_win::VoiceIdentification_win(QWidget *parent) :
     connect(m_voiceRegistrationWin_showBtn,SIGNAL(clicked()),this,SLOT(voiceRegistrationWin_showBtn_clicked()));
     connect(m_voiceLibWin_showBtn,SIGNAL(clicked()),this,SLOT(voiceLibWin_showBtn_clicked()));
 //    connect(m_identifyBtn, SIGNAL(clicked()), this, SLOT(identifyBtn_clicked()));
+    connect(exitAction, SIGNAL(triggered(bool)), this, SLOT(exitAction_triggered()));
     switch_identificationStatus();
 }
 
@@ -151,6 +155,11 @@ void VoiceIdentification_win::paintEvent(QPaintEvent *e)
     QPainter painter(this);
     //背景绘制
     painter.drawPixmap(0,0,width(),height(),QPixmap("://images/bg.png"));
+}
+
+void VoiceIdentification_win::contextMenuEvent(QContextMenuEvent* e)
+{
+    m_rightMenu->exec(QCursor::pos());
 }
 
 void VoiceIdentification_win::switch_identificationStatus()
@@ -299,4 +308,9 @@ void VoiceIdentification_win::updateRegistantHeadLab()
 {
     m_registrantHeadLab->show();
     m_registrantHeadLab->setPixmap(QPixmap(m_local_head_path));
+}
+
+void VoiceIdentification_win::exitAction_triggered()
+{
+    emit exit();
 }

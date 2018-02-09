@@ -33,6 +33,9 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(m_voiceIdentification_win,SIGNAL(switchToVoiceRegistrationWin()),this,SLOT(switchToVoiceRegistrationWin()));
     connect(m_voiceLib_win,SIGNAL(switchToVoiceIdentificationWin()),this,SLOT(switchToVoiceIdentificationWin()));
     connect(m_voiceRegistration_win,SIGNAL(switchToVoiceIdentificationWin()),this,SLOT(switchToVoiceIdentificationWin()));
+    connect(m_voiceIdentification_win,SIGNAL(exit()),this,SLOT(exit()));
+    connect(m_voiceLib_win,SIGNAL(exit()),this,SLOT(exit()));
+    connect(m_voiceRegistration_win,SIGNAL(exit()),this,SLOT(exit()));
 }
 
 MainWindow::~MainWindow()
@@ -57,4 +60,9 @@ void MainWindow::switchToVoiceRegistrationWin()
 {
     m_main_widget->setCurrentWidget(m_voiceRegistration_win);
     m_voiceIdentification_win->switch_identificationStatus();
+}
+
+void MainWindow::exit()
+{
+    this->close();
 }

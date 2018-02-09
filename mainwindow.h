@@ -30,6 +30,7 @@ private slots:
     void switchToVoiceIdentificationWin();
     void switchToVoiceLibWin();
     void switchToVoiceRegistrationWin();
+    void exit();
 };
 
 #endif // MAINWINDOW_H

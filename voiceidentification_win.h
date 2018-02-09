@@ -25,6 +25,7 @@ public:
 
 protected:
     void paintEvent(QPaintEvent *e);
+    void contextMenuEvent(QContextMenuEvent* e);
 
 private:
     Ui::VoiceIdentification_win *ui;
@@ -43,12 +44,14 @@ private:
     XVAD *m_xvad_handle;
     QByteArray m_stream_buf;//录音缓冲数据
     QFile m_file;
+    QMenu *m_rightMenu;
 
     void identify(QByteArray buf);
 
 signals:
     void switchToVoiceLibWin();
     void switchToVoiceRegistrationWin();
+    void exit();
 
 private slots:
     void update_pcmWave(int);
@@ -60,6 +63,7 @@ private slots:
 //    void identifyBtn_clicked();
 //    void updateCountDownLab();
     void updateRegistantHeadLab();
+    void exitAction_triggered();
 };
 
 #endif // VoiceIdentification_win_H
