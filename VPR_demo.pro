@@ -8,7 +8,7 @@ QT       += core gui sql multimedia charts
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
-TARGET = soundDiscern_demo
+TARGET = VPR_demo
 TEMPLATE = app
 
 
