@@ -1,7 +1,7 @@
-#include "voiceregistration_win.h"
+﻿#include "voiceregistration_win.h"
 #include "ui_voiceregistration_win.h"
 #include "pcmwaveform_widget.h"
-#include "utils/rpc_kvp_tool.h"
+#include "rpc/rpcproxy.h"
 #include "utils/audiotool.h"
 #include "soundsdata_db.h"
 #include <QPainter>
@@ -73,7 +73,6 @@ VoiceRegistration_win::VoiceRegistration_win(QWidget *parent) :
     bottom_second_layout->addStretch(1);
     //创建声纹波形显示控件
     m_PCMWaveform_widget = new PCMWaveform_widget;
-//    m_PCMWaveform_widget->setFixedSize(456,157);
     m_PCMWaveform_widget->setFixedSize(600,300);
     QHBoxLayout *bottom_third_layout = new QHBoxLayout;
     bottom_third_layout->addStretch(1);
@@ -161,6 +160,7 @@ void VoiceRegistration_win::paintEvent(QPaintEvent *e)
 
 void VoiceRegistration_win::contextMenuEvent(QContextMenuEvent* e)
 {
+    Q_UNUSED(e)
     m_rightMenu->exec(QCursor::pos());
 }
 
@@ -176,9 +176,7 @@ void VoiceRegistration_win::registrantHeadLab_clicked()
 
 void VoiceRegistration_win::registerBtn_clicked()
 {
-    RPC_Kvp_Tool *rpc_tool = RPC_Kvp_Tool::GetInstance();
-    int is_insert_failed = true;
-    rpc_tool->KvpInsertNode(is_insert_failed,"Test_RPC");
+    RpcProxy::GetInstance()->KvpInsertNode("Test_RPC");
     if(m_registrantNameEdit->text().isEmpty()){
         QMessageBox::warning(this,"错误","请输入您的名字!",QMessageBox::Yes);
         return;
@@ -206,9 +204,12 @@ void VoiceRegistration_win::record_timeout(QByteArray buf)
     QCryptographicHash md5(QCryptographicHash::Md5);
     md5.addData(buf);
     QString spk_id = md5.result().toHex();
-    RPC_Kvp_Tool *rpc_tool = RPC_Kvp_Tool::GetInstance();
-    _Rpc_ModelInfo *ret = nullptr;
-    rpc_tool->KvpRegisterSpeakerByStream(ret, (short*)buf.data(), buf.size()/2 , vp_node, "/tmp/asv/", spk_id.toStdString().c_str());
+    std::vector<int16_t> utt_arr;
+    short* utt = (short*)buf.data();
+    for(int i = 0;i < buf.size()/2;i++) {
+        utt_arr.push_back(utt[i]);
+    }
+    _Rpc_ModelInfo *ret = RpcProxy::GetInstance()->KvpRegisterSpeakerByStream(utt_arr,m_audio->getSampleRate(),vp_node,spk_id.toStdString());
     if(ret == nullptr){
         return;
     }
@@ -221,9 +222,9 @@ void VoiceRegistration_win::record_timeout(QByteArray buf)
         db->AddRegistrantInfo(spk_id,m_buf_name,head_path);
         QMessageBox::information(this,tr("信息"),QString("注册成功"),QMessageBox::Yes);
     }else{
-        QMessageBox::warning(this,tr("错误"),QString("注册失败,错误码为%1,错误信息:%2").arg(QString::number(ret->ErrCode, 10)).arg(ret->ErrMsg),QMessageBox::Yes);
+        QMessageBox::warning(this,tr("错误"),QString("注册失败,错误码为%1,错误信息:%2").arg(QString::number(ret->ErrCode, 10)).arg(ret->ErrMsg.c_str()),QMessageBox::Yes);
     }
-    rpc_tool->Delete_Rpc_ModelInfo(ret);
+    RpcProxy::GetInstance()->Delete_Asv_Type(_Asv_Type::_RPC_ModelInfo,ret);
 }
 
 void VoiceRegistration_win::returnBtn_clicked()

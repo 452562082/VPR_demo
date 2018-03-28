@@ -44,8 +44,8 @@ private slots:
 private:
     static HttpSender* m_instance;
     QNetworkAccessManager m_manager;
-    QString m_host;
-    int m_port;
+//    QString m_host;
+//    int m_port;
     QMap<QNetworkReply*,QString> m_filenameMap;
 //    QString m_filePath;
 };

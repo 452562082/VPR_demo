@@ -98,6 +98,7 @@ AudioTool::AudioTool(QObject *parant) : QObject(parant),
     m_audioFormat.setCodec("audio/pcm");
     m_audioFormat.setByteOrder(QAudioFormat::LittleEndian);
     m_audioFormat.setSampleType(QAudioFormat::UnSignedInt);
+    m_sampleRate = 8000;
 }
 
 AudioTool::~AudioTool()
@@ -274,6 +275,7 @@ void AudioTool::OnAudioOutputRead()
 void AudioTool::setSampleRate(int sampleRate)
 {
     m_audioFormat.setSampleRate(sampleRate);
+    m_sampleRate = sampleRate;
 }
 
 void AudioTool::setChannelCount(int channelCount)
@@ -299,6 +301,11 @@ void AudioTool::setByteOrder(QAudioFormat::Endian byteOrder)
 void AudioTool::setSampleType(QAudioFormat::SampleType sampleType)
 {
     m_audioFormat.setSampleType(sampleType);
+}
+
+int AudioTool::getSampleRate() const
+{
+    return m_sampleRate;
 }
 
 bool AudioTool::initAudioFormat()

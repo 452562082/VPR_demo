@@ -3,9 +3,9 @@
 
 #include <QWidget>
 #include <QScrollArea>
-//#include <QList>
 #include <QMap>
 
+#pragma execution_character_set("utf-8")
 namespace Ui {
 class VoiceLibTable_widget;
 }

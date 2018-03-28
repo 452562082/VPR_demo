@@ -4,6 +4,7 @@
 #include <QUrl>
 #include <QHttpPart>
 #include "utils/logger.h"
+#include "configparser.h"
 
 HttpSender* HttpSender::m_instance = nullptr;
 HttpSender::HttpSender(QObject *parent) : QObject(parent)
@@ -27,19 +28,19 @@ HttpSender* HttpSender::GetInstance()
     return m_instance;
 }
 
-void HttpSender::setHost(const QString& host)
-{
-    m_host = host;
-}
+//void HttpSender::setHost(const QString& host)
+//{
+//    m_host = host;
+//}
 
-void HttpSender::setPort(int port)
-{
-    m_port = port;
-}
+//void HttpSender::setPort(int port)
+//{
+//    m_port = port;
+//}
 
 void HttpSender::uploadText(const QByteArray& text)
 {
-    QString url = "http://" + m_host + ":" + QString::number(m_port,10) + "/uploadText";
+    QString url = "http://" + ConfigParser::GetInstance()->GetHTTP_ServerIp() + ":" + QString::number(ConfigParser::GetInstance()->GetHTTP_ServerPort(),10) + "/uploadText";
 
     QHttpMultiPart *multiPart = new QHttpMultiPart(QHttpMultiPart::FormDataType);
     QString uuidboundry = QUuid::createUuid().toString();
@@ -56,7 +57,7 @@ void HttpSender::uploadText(const QByteArray& text)
 
 void HttpSender::uploadFile(const QString& filePath,const QString& path)
 {
-    QString url = "http://" + m_host + ":" + QString::number(m_port,10) + "/uploadFile";
+    QString url = "http://" + ConfigParser::GetInstance()->GetHTTP_ServerIp() + ":" + QString::number(ConfigParser::GetInstance()->GetHTTP_ServerPort(),10) + "/uploadFile";
     QFile *file = new QFile(filePath);
     if(!file->open(QIODevice::ReadOnly)){
         Logger::Error("HTTP - upload file can't open.");
@@ -80,7 +81,7 @@ void HttpSender::uploadFile(const QString& filePath,const QString& path)
 
 void HttpSender::downloadFile(const QString& path,const QString& filePath)
 {
-    QString url = "http://" + m_host + ":" + QString::number(m_port,10) + "/downloadFile?filename=" + path;
+    QString url = "http://" + ConfigParser::GetInstance()->GetHTTP_ServerIp() + ":" + QString::number(ConfigParser::GetInstance()->GetHTTP_ServerPort(),10) + "/downloadFile?filename=" + path;
     
     QNetworkRequest request = QNetworkRequest(QUrl(url));
     QNetworkReply *reply = m_manager.get(request);
@@ -90,7 +91,7 @@ void HttpSender::downloadFile(const QString& path,const QString& filePath)
 
 void HttpSender::removeFile(const QString& path)
 {
-    QString url = "http://" + m_host + ":" + QString::number(m_port,10) + "/removeFile?filename=" + path;
+    QString url = "http://" + ConfigParser::GetInstance()->GetHTTP_ServerIp() + ":" + QString::number(ConfigParser::GetInstance()->GetHTTP_ServerPort(),10) + "/removeFile?filename=" + path;
     QNetworkRequest request = QNetworkRequest(QUrl(url));
     m_manager.get(request);
 }

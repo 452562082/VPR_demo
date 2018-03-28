@@ -1,4 +1,4 @@
-﻿//#include "config.h"
+//#include "config.h"
 #include "xbusiness_vpr.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -33,7 +33,8 @@ size_t xvpr_vad_detect_valid_speech(XVAD *handle, short *input, size_t length, s
 	size_t out_length = 0;
 	short *cur_ptr = NULL;
 
-	short win_buf[VOC_BLOCK_LEN+1];
+//    short win_buf[VOC_BLOCK_LEN+1];
+    short win_buf[801];
 	size_t num_of_win, num_of_mod, i, k, eng;
 
 	*output = (short *) malloc(sizeof(short) * length);

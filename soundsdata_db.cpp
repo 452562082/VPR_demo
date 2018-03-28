@@ -1,5 +1,6 @@
 ﻿#include "SoundsData_db.h"
 #include "utils/logger.h"
+#include "configparser.h"
 #include <QVariant>
 #include <QVector>
 
@@ -148,21 +149,21 @@ SoundsData_db::Error SoundsData_db::GetLastError() const
     return m_last_error;
 }
 
-void SoundsData_db::setHostName(const QString &hostname)
-{
-    m_hostName = hostname;
-}
+//void SoundsData_db::setHostName(const QString &hostname)
+//{
+//    m_hostName = hostname;
+//}
 
-void SoundsData_db::setPort(int port)
-{
-    m_port = port;
-}
+//void SoundsData_db::setPort(int port)
+//{
+//    m_port = port;
+//}
 
 bool SoundsData_db::open()
 {
     m_database = QSqlDatabase::addDatabase("QMYSQL");
-    m_database.setHostName(m_hostName);
-    m_database.setPort(m_port);
+    m_database.setHostName(ConfigParser::GetInstance()->GetDB_HostName());
+    m_database.setPort(ConfigParser::GetInstance()->GetDB_Port());
     m_database.setUserName(username);
     m_database.setPassword(password);
     if(!m_database.open()){

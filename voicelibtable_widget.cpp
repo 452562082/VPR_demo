@@ -5,9 +5,9 @@
 #include <QGridLayout>
 #include <QDir>
 #include "registrantitem_widget.h"
-#include "utils/rpc_kvp_tool.h"
 #include "utils/httpsender.h"
 #include "utils/logger.h"
+#include "rpc/rpcproxy.h"
 
 VoiceLibTable_widget::VoiceLibTable_widget(QWidget *parent) :
     QScrollArea(parent),
@@ -126,9 +126,7 @@ void VoiceLibTable_widget::removeRegistrantItem()
 {
     RegistrantItem_widget *item = qobject_cast<RegistrantItem_widget*>(sender());
     RegistrantInfo info(m_registrantItemMap.value(item));
-    RPC_Kvp_Tool *rpc_kvp = RPC_Kvp_Tool::GetInstance();
-    int ret = -1;
-    if(!rpc_kvp->KvpModelRemoveBySpkid(ret,"Test_RPC","/tmp/asv/",info.spk_id.toStdString().c_str()) || ret != 0){
+    if(RpcProxy::GetInstance()->KvpModelRemoveBySpkid("Test_RPC",info.spk_id.toStdString())){
         Logger::Error(QString("RPC - remove Spkid %1 failed.").arg(info.spk_id));
         return;
     }

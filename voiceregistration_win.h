@@ -6,6 +6,7 @@
 #include <QLineEdit>
 #include <QLabel>
 
+#pragma execution_character_set("utf-8")
 namespace Ui {
 class VoiceRegistration_win;
 }

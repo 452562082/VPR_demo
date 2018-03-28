@@ -5,7 +5,7 @@
 int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);
-    ConfigParser::ConfigSet();
+    ConfigParser::GetInstance()->Init();
     MainWindow w;
     w.show();
 

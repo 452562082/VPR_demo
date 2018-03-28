@@ -1,4 +1,4 @@
-#include "voicelib_win.h"
+﻿#include "voicelib_win.h"
 #include "ui_VoiceLib_win.h"
 #include "voicelibtable_widget.h"
 #include <QPainter>
@@ -76,6 +76,7 @@ void VoiceLib_win::paintEvent(QPaintEvent *e)
 
 void VoiceLib_win::contextMenuEvent(QContextMenuEvent* e)
 {
+    Q_UNUSED(e)
     m_rightMenu->exec(QCursor::pos());
 }
 

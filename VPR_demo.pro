@@ -16,7 +16,6 @@ SOURCES += main.cpp\
     soundsdata_db.cpp \
     utils/audiotool.cpp \
     pcmwaveform_widget.cpp \
-    utils/rpc_kvp_tool.cpp \
     utils/ftpclient.cpp \
     registrantitem_widget.cpp \
     masklabel.cpp \
@@ -29,16 +28,15 @@ SOURCES += main.cpp\
     utils/qurlinfo.cpp \
     utils/logger.cpp \
     utils/httpsender.cpp \
-    utils/xvpr_tool.cpp \
-    utils/xbusiness_aid.c \
-    utils/xbusiness_vad.c
+    rpc/xbusiness_aid.c \
+    rpc/xbusiness_vad.c \
+    configparser.cpp \
+    rpc/rpcproxy.cpp
 
 HEADERS  += \
     soundsdata_db.h \
     utils/audiotool.h \
     pcmwaveform_widget.h \
-    utils/rpc_kvp_tool.h \
-    utils/test_rpc.h \
     utils/ftpclient.h \
     registrantitem_widget.h \
     masklabel.h \
@@ -52,9 +50,10 @@ HEADERS  += \
     utils/qurlinfo.h \
     utils/logger.h \
     utils/httpsender.h \
-    utils/xvpr_tool.h \
-    utils/xbusiness_vpr.h \
-    utils/xbusiness_vpr.h
+    rpc/asv_rpc.h \
+    rpc/test_rpc.h \
+    rpc/xbusiness_vpr.h \
+    rpc/rpcproxy.h
 
 FORMS    += \
     pcmwaveform_widget.ui \
@@ -68,7 +67,4 @@ FORMS    += \
 RESOURCES += \
     registrants.qrc
 
-#LIBS += -L./libs/ -lxvpr \
-#        ./libs/xvpr.dll
-
-
+LIBS += -L../lib/ -lkst_sdk \

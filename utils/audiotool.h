@@ -38,22 +38,21 @@ public:
     void setCodec(const QString& codec);
     void setByteOrder(QAudioFormat::Endian byteOrder);
     void setSampleType(QAudioFormat::SampleType sampleType);
+
+    int getSampleRate() const;
 private:
     bool initAudioFormat();
 
 private:
-//    AudioToolStatus m_audioStatus;//当前状态
     QAudioFormat m_audioFormat;
     QIODevice* m_inputDevSound;//输入设备数据流
     QIODevice* m_outputDevSound;//输出设备数据流
     QAudioInput* m_audioInput;
     QAudioOutput* m_audioOutput;
-//    QTimer *m_audioInput_timer;
     QByteArray m_buffer_input;//缓冲录音数据
     QFile m_file;
     qint64 m_dataLengthRecord;
-//    QByteArray m_stream_buf;
-//    int m_record_cycle_sec;
+    int m_sampleRate;
 
 signals:
     void recordInput_updateAverageVolume(int);

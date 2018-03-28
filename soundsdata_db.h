@@ -64,8 +64,8 @@ private:
     static SoundsData_db* m_instance;
     QSqlDatabase m_database;
     bool m_is_open;
-    QString m_hostName;
-    int m_port;
+//    QString m_hostName;
+//    int m_port;
     Error m_last_error;
 };
 

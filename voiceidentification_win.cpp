@@ -1,8 +1,7 @@
-#include "voiceidentification_win.h"
+﻿#include "voiceidentification_win.h"
 #include "ui_voiceidentification_win.h"
 #include "utils/audiotool.h"
 #include "pcmwaveform_widget.h"
-#include "utils/rpc_kvp_tool.h"
 #include <QPainter>
 #include <QCryptographicHash>
 #include <QDir>
@@ -10,11 +9,13 @@
 #include <QHBoxLayout>
 #include <QVBoxLayout>
 #include "masklabel.h"
+#include "soundsdata_db.h"
 #include "utils/httpsender.h"
 #include "utils/logger.h"
+#include "rpc/rpcproxy.h"
 
 namespace{
-    const char* vp_node = "Test_RPC";
+    const std::vector<std::string> node_list(1,"Test_RPC");
 }
 
 VoiceIdentification_win::VoiceIdentification_win(QWidget *parent) :
@@ -72,39 +73,11 @@ VoiceIdentification_win::VoiceIdentification_win(QWidget *parent) :
     bottom_second_layout->addStretch(1);
     //创建声纹波形显示控件
     m_PCMWaveform_widget = new PCMWaveform_widget(this);
-//    m_PCMWaveform_widget->setFixedSize(456,157);
     m_PCMWaveform_widget->setFixedSize(600,300);
     QHBoxLayout *bottom_third_layout = new QHBoxLayout;
     bottom_third_layout->addStretch(1);
     bottom_third_layout->addWidget(m_PCMWaveform_widget);
     bottom_third_layout->addStretch(1);
-    //创建声纹识别按钮
-//    m_identifyBtn = new QPushButton(this);
-//    m_identifyBtn->setStyleSheet(QString("* {background-color: transparent;"
-//                                 "border-radius: %1px;"
-//                                 "border-image:url(:/images/record.png);"
-//                                 "width: 184px;"
-//                                 "height:184px;}"
-//                                 "* :hover{border-image:url(:/images/record_hover.png);}").arg(m_identifyBtn->width()/2));
-//    QHBoxLayout *bottom_fourth_layout = new QHBoxLayout;
-//    bottom_fourth_layout->addStretch(1);
-//    bottom_fourth_layout->addWidget(m_identifyBtn);
-//    bottom_fourth_layout->addStretch(1);
-//    QLabel *identifyLab = new QLabel("开始识别");
-//    identifyLab->setFont(font);
-//    identifyLab->setStyleSheet("* {color: #2b85e3; font-size: 20px;}");
-//    QHBoxLayout *bottom_fifth_layout = new QHBoxLayout;
-//    bottom_fifth_layout->addStretch(1);
-//    bottom_fifth_layout->addWidget(identifyLab);
-//    bottom_fifth_layout->addStretch(1);
-    //创建倒计时显示控件
-//    m_countDownLab = new QLabel(this);
-//    m_countDownLab->setStyleSheet("* {color: #3ddcf6; font-size: 30px;}");
-//    m_countDownLab->hide();
-//    QHBoxLayout *bottom_sixth_layout = new QHBoxLayout;
-//    bottom_sixth_layout->addStretch(1);
-//    bottom_sixth_layout->addWidget(m_countDownLab);
-//    bottom_sixth_layout->addStretch(1);
 
     QVBoxLayout *bottom_layout = new QVBoxLayout;
     bottom_layout->addSpacing(40);
@@ -112,10 +85,6 @@ VoiceIdentification_win::VoiceIdentification_win(QWidget *parent) :
     bottom_layout->addSpacing(5);
     bottom_layout->addLayout(bottom_second_layout);
     bottom_layout->addLayout(bottom_third_layout);
-//    bottom_layout->addLayout(bottom_fourth_layout);
-//    bottom_layout->addLayout(bottom_fifth_layout);
-//    bottom_layout->addSpacing(10);
-//    bottom_layout->addLayout(bottom_sixth_layout);
     bottom_layout->addStretch(1);
 
     QVBoxLayout *main_layout = new QVBoxLayout;
@@ -128,11 +97,9 @@ VoiceIdentification_win::VoiceIdentification_win(QWidget *parent) :
     QAction *exitAction = m_rightMenu->addAction("退出");
 
     connect(m_audio,SIGNAL(recordInput_updateAverageVolume(int)),this,SLOT(update_pcmWave(int)));
-//    connect(m_audio,SIGNAL(record_timeout(QByteArray,int)),this,SLOT(record_timeout(QByteArray,int)));
     connect(m_audio,SIGNAL(recordInput_cycleData(QByteArray)),this,SLOT(record_cycleDataReceived(QByteArray)));
     connect(m_voiceRegistrationWin_showBtn,SIGNAL(clicked()),this,SLOT(voiceRegistrationWin_showBtn_clicked()));
     connect(m_voiceLibWin_showBtn,SIGNAL(clicked()),this,SLOT(voiceLibWin_showBtn_clicked()));
-//    connect(m_identifyBtn, SIGNAL(clicked()), this, SLOT(identifyBtn_clicked()));
     connect(exitAction, SIGNAL(triggered(bool)), this, SLOT(exitAction_triggered()));
     switch_identificationStatus();
 }
@@ -159,6 +126,7 @@ void VoiceIdentification_win::paintEvent(QPaintEvent *e)
 
 void VoiceIdentification_win::contextMenuEvent(QContextMenuEvent* e)
 {
+    Q_UNUSED(e)
     m_rightMenu->exec(QCursor::pos());
 }
 
@@ -191,10 +159,13 @@ void VoiceIdentification_win::record_cycleDataReceived(QByteArray buf)
 }
 
 void VoiceIdentification_win::identify(QByteArray buf)
-{
-    RPC_Kvp_Tool *rpc_tool = RPC_Kvp_Tool::GetInstance();
-    _Rpc_TopSpeakerInfo *ret = nullptr;
-    rpc_tool->KvpIdentifyTopSpeakerByStream(ret, (short*)buf.data(), buf.size()/2, &vp_node,1,1, 1, 0);
+{   
+    std::vector<int16_t> utt_arr;
+    short* utt = (short*)buf.data();
+    for(int i = 0;i < buf.size()/2;i++) {
+        utt_arr.push_back(utt[i]);
+    }
+    _Rpc_TopSpeakerInfo *ret = RpcProxy::GetInstance()->KvpIdentifyTopSpeakerByStream(utt_arr, m_audio->getSampleRate(), node_list,1,1,0);
     if(ret != nullptr){
         m_error_code = ret->ErrCode;
     }
@@ -202,17 +173,15 @@ void VoiceIdentification_win::identify(QByteArray buf)
     if(ret != nullptr && ret->ErrCode == 0 && ret->Top != 0){
         SoundsData_db *db = SoundsData_db::GetInstance();
         RegistrantInfo registrant_info;
-        if(ret->Scores != nullptr){
-            //取最高得分
-            int max_score_index = 0;
-            for(int i = 0;i < ret->Scores_size;++i){
-                if(ret->Scores[i]->Score > ret->Scores[max_score_index]->Score){
-                    max_score_index = i;
-                }
+        //取最高得分
+        int max_score_index = 0;
+        for(int i = 0;i < ret->Scores.size();++i){
+            if(ret->Scores[i].Score > ret->Scores[max_score_index].Score){
+                max_score_index = i;
             }
-            Logger::Info(QString("RPC - KvpIdentifyTopSpeakerByStream Max score Spkid = %1").arg(ret->Scores[max_score_index]->Spkid));
-            db->GetRegistrantInfoBySpkId(ret->Scores[max_score_index]->Spkid, registrant_info);
         }
+        Logger::Info(QString("RPC - KvpIdentifyTopSpeakerByStream Max score Spkid = %1").arg(ret->Scores[max_score_index].Spkid.c_str()));
+        db->GetRegistrantInfoBySpkId(ret->Scores[max_score_index].Spkid.c_str(), registrant_info);
 
         QString head_dir_name = QDir::currentPath() + "/headImages/";
         QDir head_dir;
@@ -231,57 +200,12 @@ void VoiceIdentification_win::identify(QByteArray buf)
         }
 
         m_identifyInfoLab->setText(registrant_info.name);
-        rpc_tool->Delete_Rpc_TopSpeakerInfo(ret);
+        RpcProxy::GetInstance()->Delete_Asv_Type(_Asv_Type::_RPC_TopSpeakerInfo,ret);
     }else{
         m_registrantHeadLab->hide();
         m_identifyInfoLab->setText("识别失败");
     }
 }
-//void VoiceIdentification_win::record_timeout(QByteArray buf,int len)
-//{
-//    RPC_Kvp_Tool *rpc_tool = RPC_Kvp_Tool::GetInstance();
-//    _Rpc_TopSpeakerInfo *ret = nullptr;
-//    rpc_tool->KvpIdentifyTopSpeakerByStream(ret, (short*)buf.data(), len, &vp_node,1,1, 1, 0);
-//    if(ret != nullptr){
-//        m_error_code = ret->ErrCode;
-//    }
-//    if(ret != nullptr && ret->ErrCode == 0 && ret->Top != 0){
-//        SoundsData_db *db = SoundsData_db::GetInstance();
-//        RegistrantInfo registrant_info;
-//        if(ret->Scores != nullptr){
-//            //取最高得分
-//            int max_score_index = 0;
-//            for(int i = 0;i < ret->Scores_size;++i){
-//                if(ret->Scores[i]->Score > ret->Scores[max_score_index]->Score){
-//                    max_score_index = i;
-//                }
-//            }
-//            Logger::Info(QString("RPC - KvpIdentifyTopSpeakerByStream Max score Spkid = %1").arg(ret->Scores[max_score_index]->Spkid));
-//            db->GetRegistrantInfoBySpkId(ret->Scores[max_score_index]->Spkid, registrant_info);
-//        }
-
-//        QString head_dir_name = QDir::currentPath() + "/headImages/";
-//        QDir head_dir;
-//        if(!head_dir.exists(head_dir_name)){
-//            head_dir.mkdir(head_dir_name);
-//        }
-//        QString local_head_path = head_dir_name + registrant_info.spk_id + registrant_info.head_path.right(registrant_info.head_path.length() - registrant_info.head_path.lastIndexOf('.'));
-//        m_local_head_path = local_head_path;
-//        if(!QFile::exists(local_head_path)){
-//            HttpSender *http_sender = HttpSender::GetInstance();
-//            http_sender->downloadFile(registrant_info.head_path,local_head_path);
-//            connect(http_sender,SIGNAL(finished()),this,SLOT(updateRegistantHeadLab()));
-//        }else{
-//            m_registrantHeadLab->show();
-//            m_registrantHeadLab->setPixmap(QPixmap(local_head_path));
-//        }
-
-//        m_identifyInfoLab->setText(registrant_info.name);
-//        rpc_tool->Delete_Rpc_TopSpeakerInfo(ret);
-//    }else{
-//        m_identifyInfoLab->setText("识别失败");
-//    }
-//}
 
 void VoiceIdentification_win::voiceRegistrationWin_showBtn_clicked()
 {

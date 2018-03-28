@@ -5,6 +5,7 @@
 #include <QTableView>
 #include <QPushButton>
 
+#pragma execution_character_set("utf-8")
 namespace Ui {
 class VoiceLib_win;
 }

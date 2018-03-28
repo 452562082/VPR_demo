@@ -6,6 +6,7 @@
 #include <QPushButton>
 #include "soundsdata_db.h"
 
+#pragma execution_character_set("utf-8")
 namespace Ui {
 class RegistrantItem_widget;
 }
